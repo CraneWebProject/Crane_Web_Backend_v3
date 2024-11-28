@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import sch.crane.domain.user.entity.enums.Session;
+import sch.crane.domain.user.entity.enums.UserRole;
 
 import java.time.LocalDateTime;
 
@@ -35,13 +36,15 @@ public class User {
 
     private Integer th;
 
+    private UserRole userRole;
+
     private Boolean isDelete = false;
 
     private LocalDateTime deletedAt;
 
     @Builder
     public User(String email, String password, String name, String department, String studentId,
-                String phone, String birth, Session session, Integer th, Boolean isDelete, LocalDateTime deletedAt) {
+                String phone, String birth, Session session, Integer th, UserRole userRole,Boolean isDelete) {
         this.email = email;
         this.password = password;
         this.name = name;
@@ -51,8 +54,8 @@ public class User {
         this.birth = birth;
         this.session = session;
         this.th = th;
+        this.userRole = userRole;
         this.isDelete = isDelete;
-        this.deletedAt = deletedAt;
     }
 
     public void updateUser(String password, String department,Session session,String phone){
