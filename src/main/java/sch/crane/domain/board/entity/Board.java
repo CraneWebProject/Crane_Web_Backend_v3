@@ -22,6 +22,8 @@ public class Board {
 
     private String title;
 
+    //@Lob
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     private Integer view;
@@ -44,11 +46,12 @@ public class Board {
     private User user;
 
     @Builder
-    public Board(String title, String content, BoardCategory boardCategory, String attachFile) {
+    public Board(String title, String content, BoardCategory boardCategory, String attachFile, User user) {
         this.title = title;
         this.content = content;
         this.boardCategory = boardCategory;
         this.attachFile = attachFile;
+        this.user = user;
     }
 
     public void updateBoard(String title, String content, BoardCategory boardCategory, String attachFile) {
