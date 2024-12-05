@@ -34,9 +34,8 @@ public class ReservationController {
     }
 
     //예약 수정
-    @PutMapping("/{resId}")
-    public ResponseEntity<ApiResponse<ReservationResponseDto>> updateReservation(@PathVariable Long resId,
-                                                                                 @AuthenticationPrincipal CustomUserDetails authUser,
+    @PutMapping
+    public ResponseEntity<ApiResponse<ReservationResponseDto>> updateReservation(@AuthenticationPrincipal CustomUserDetails authUser,
                                                                                  @RequestBody ReservationRequestDto reservationRequestDto) {
         ReservationResponseDto reservationResponseDto = reservationService.updateReservation(reservationRequestDto, authUser.getEmail());
         return ResponseEntity.ok(ApiResponse.success("예약 수정 성공", reservationResponseDto));

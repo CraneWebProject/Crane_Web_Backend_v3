@@ -15,14 +15,13 @@ import sch.crane.domain.reservation.exception.ReservationNotFoundException;
 import sch.crane.domain.reservation.repository.ReservationRepository;
 import sch.crane.domain.user.entity.User;
 import sch.crane.domain.user.entity.enums.UserRole;
-import sch.crane.domain.user.exception.UserNotFoundException;
 import sch.crane.domain.user.repository.UserRepository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @RequiredArgsConstructor
@@ -55,7 +54,7 @@ public class ReservationService {
 
             reservationList = reservationRepository.findAllByDate(startOfDay, endOfDay);
 
-            if(reservationList.size() == 0){
+            if(reservationList.isEmpty()){
                 createReservationAfterNDays(i);
                 openEnsembleAfterNDays(i);
                 openInstAfterNDays(i);
@@ -101,11 +100,9 @@ public class ReservationService {
 
         List<Reservation> reservationList = reservationRepository.findAllByDate(startOfDay, endOfDay);
 
-        for(Reservation r : reservationList){
-            if(r.getInstrument().equals(Instrument.ENSEMBLE)){
-                r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUser());
-            }
-        }
+        reservationList.stream()
+                .filter(r -> r.getInstrument().equals(Instrument.ENSEMBLE))
+                .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUser()));
     }
 
     //n일 뒤 장비 예약 open
@@ -116,11 +113,9 @@ public class ReservationService {
 
         List<Reservation> reservationList = reservationRepository.findAllByDate(startOfDay, endOfDay);
 
-        for(Reservation r : reservationList){
-            if(!r.getInstrument().equals(Instrument.ENSEMBLE)){
-                r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUser());
-            }
-        }
+        reservationList.stream()
+                .filter(r -> !r.getInstrument().equals(Instrument.ENSEMBLE))
+                .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUser()));
     }
 
 
@@ -128,8 +123,7 @@ public class ReservationService {
     //단일 예약 생성
     @Transactional
     public ReservationResponseDto createReservation(ReservationRequestDto reservationRequestDto, String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("유저를 찾을 수 없습니다"));
+        User user = userRepository.findByEmailOrElseThrow(email);
 
         Reservation reservation = Reservation.builder()
                 .time(reservationRequestDto.getTime())
@@ -155,10 +149,8 @@ public class ReservationService {
     //예약 시간, 예약 장비 수정 가능
     @Transactional
     public ReservationResponseDto updateReservation(ReservationRequestDto reservationRequestDto, String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("유저를 찾을 수 없습니다."));
-        Reservation reservation = reservationRepository.findById(reservationRequestDto.getReservation_id())
-                .orElseThrow(() -> new ReservationNotFoundException("예약을 찾을 수 없습니다."));
+        User user = userRepository.findByEmailOrElseThrow(email);
+        Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationRequestDto.getReservation_id());
 
         //신청자 혹은 관리자, 매니저만 수정 가능
         if(!user.getUser_id().equals(reservation.getUser().getUser_id()) &&
@@ -166,10 +158,18 @@ public class ReservationService {
             throw new BadCredentialsException("권한이 없는 사용자입니다.");
         }
 
+        // 값이 null인 경우 기존 값 유지
+        LocalDateTime updatedTime = reservationRequestDto.getTime() != null
+                ? reservationRequestDto.getTime()
+                : reservation.getTime();
+        Instrument updatedInstrument = reservationRequestDto.getInstrument() != null
+                ? reservationRequestDto.getInstrument()
+                : reservation.getInstrument();
+
         reservation.updateReservation(
-                reservationRequestDto.getTime(),
+                updatedTime,
                 reservation.getPossible(),
-                reservationRequestDto.getInstrument(),
+                updatedInstrument,
                 reservation.getUser()
         );
 
@@ -180,38 +180,24 @@ public class ReservationService {
     //예약하기
     @Transactional
     public ReservationResponseDto makeReservation(ReservationRequestDto reservationRequestDto, String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("유저를 찾을 수 없습니다."));
-        Reservation reservation = reservationRepository.findById(reservationRequestDto.getReservation_id())
-                .orElseThrow(() -> new ReservationNotFoundException("예약을 찾을 수 없습니다."));
+        User user = userRepository.findByEmailOrElseThrow(email);
+        Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationRequestDto.getReservation_id());
 
         if(!reservation.getPossible()){
-            throw new BadRequestException("이미 예약된 시간입니다.");
+            throw new BadRequestException("예약 불가능한 시간대입니다.");
         }
 
         //합주 예약인 경우 장비 예약 불가 처리
         List<Reservation> reservationList = reservationRepository.findByTime(reservationRequestDto.getTime());
         if(reservation.getInstrument().equals(Instrument.ENSEMBLE)){
-            for(Reservation r : reservationList){
-                r.updateReservation(
-                        r.getTime(),
-                        false,
-                        r.getInstrument(),
-                        r.getUser()
-                );
-            }
+            reservationList.stream()
+                    .filter(r -> !r.getInstrument().equals(Instrument.ENSEMBLE))
+                    .forEach(r -> r.updateReservation(r.getTime(), false, r.getInstrument(), r.getUser()));
         }else{
             //장비 예약인 경우 합주 예약 불가 처리
-            for(Reservation r : reservationList){
-                if(r.getInstrument().equals(Instrument.ENSEMBLE)){
-                    r.updateReservation(
-                            r.getTime(),
-                            false,
-                            r.getInstrument(),
-                            r.getUser()
-                    );
-                }
-            }
+            reservationList.stream()
+                    .filter(r -> r.getInstrument().equals(Instrument.ENSEMBLE))
+                    .forEach(r -> r.updateReservation(r.getTime(), false, r.getInstrument(), r.getUser()));
         }
 
         //예약 시간이 지난 경우, 예약 시간 30분 이내 예약 불가
@@ -230,15 +216,16 @@ public class ReservationService {
     }
 
 
+
+
     //예약 취소
     //신청자 혹은 관리자, 매니저만 취소 가능
     //지난 예약에 대한 취소 불가
     @Transactional
     public ReservationResponseDto cancelReservation(ReservationRequestDto reservationRequestDto, String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("유저를 찾을 수 없습니다."));
-        Reservation reservation = reservationRepository.findById(reservationRequestDto.getReservation_id())
-                .orElseThrow(() -> new ReservationNotFoundException("예약을 찾을 수 없습니다."));
+        User user = userRepository.findByEmailOrElseThrow(email);
+        Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationRequestDto.getReservation_id());
+
 
         if(!user.getUser_id().equals(reservation.getUser().getUser_id()) &&
                 !(user.getUserRole() == UserRole.ADMIN || user.getUserRole() == UserRole.MANAGER)){
@@ -251,28 +238,15 @@ public class ReservationService {
 
         //합주 예약 취소인 경우 장비 예약 허용으로 변경
         List<Reservation> reservationList = reservationRepository.findByTime(reservationRequestDto.getTime());
-
         if(reservation.getInstrument().equals(Instrument.ENSEMBLE)){
-            for(Reservation r : reservationList){
-                r.updateReservation(
-                        r.getTime(),
-                        true,
-                        r.getInstrument(),
-                        null
-                );
-            }
+            reservationList.stream()
+                    .filter(r -> !r.getInstrument().equals(Instrument.ENSEMBLE))
+                    .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUser()));
         }else {
             //장비 예약 취소인 경우, 합주 예약 가능하도록 변경
-            for(Reservation r : reservationList){
-                if(r.getInstrument().equals(Instrument.ENSEMBLE)){
-                    r.updateReservation(
-                            r.getTime(),
-                            true,
-                            r.getInstrument(),
-                            null
-                    );
-                }
-            }
+            reservationList.stream()
+                    .filter(r -> r.getInstrument().equals(Instrument.ENSEMBLE))
+                    .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUser()));
         }
 
         reservation.updateReservation(
@@ -294,41 +268,28 @@ public class ReservationService {
         LocalDateTime startOfDay = LocalDateTime.now().minusDays(8).withHour(0).withMinute(0);
         LocalDateTime endOfDay = LocalDateTime.now().minusDays(8).withHour(23).withMinute(59);
 
-        List<Reservation> reservationList = reservationRepository.findAllByDate(startOfDay, endOfDay);
-
-        for(Reservation r : reservationList){
-            if(r.getUser() == null){
-                reservationRepository.delete(r);
-            }
-        }
+        reservationRepository.deleteReservationByDateAndUserIsNull(startOfDay, endOfDay);
     }
 
 
     //일간 장비별 예약 목록
     public List<ReservationResponseDto> findReservationByDayAndInst(ReservationRequestDto reservationRequestDto) {
         LocalDateTime startOfDay = reservationRequestDto.getTime().toLocalDate().atStartOfDay();
-        LocalDateTime endOfDay = reservationRequestDto.getTime().toLocalDate().atTime(LocalTime.MAX);
+        LocalDateTime endOfDay = reservationRequestDto.getTime().toLocalDate().plusDays(1).atStartOfDay();
 
         List<Reservation> reservationList = reservationRepository.findAllByResDateAndInstrument(
                 startOfDay,
                 endOfDay,
                 reservationRequestDto.getInstrument()
         );
-
-        List<ReservationResponseDto> reservationResponseDtoList = new ArrayList<>();
-
-        for (Reservation r : reservationList) {
-            ReservationResponseDto reservationResponseDto = ReservationResponseDto.from(r);
-            reservationResponseDtoList.add(reservationResponseDto);
-        }
-
-        return reservationResponseDtoList;
+        return reservationList.stream()
+                .map(ReservationResponseDto::from)
+                .collect(Collectors.toList());
     }
 
     //사용자 별 예약목록
     public List<ReservationResponseDto> findReservationByUser(String email) {
-        userRepository.findByEmail(email)
-                .orElseThrow(() -> new UserNotFoundException("유저를 찾을 수 없습니다."));
+        userRepository.findByEmailOrElseThrow(email);
         List<Reservation> reservationList = reservationRepository.findByUserEmail(email);
 
         List<ReservationResponseDto> reservationResponseDtoList = new ArrayList<>();

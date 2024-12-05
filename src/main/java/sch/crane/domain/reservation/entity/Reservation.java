@@ -31,7 +31,7 @@ public class Reservation {
     private Instrument instrument;
 
     @JoinColumn(name = "user_id")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     private User user;
 
     public void updateReservation(LocalDateTime time,
