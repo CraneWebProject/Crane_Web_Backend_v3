@@ -47,6 +47,7 @@ public class BoardResponseDto {
                 .title(board.getTitle())
                 .content(board.getContent())
                 .view(board.getView())
+                .boardCategory(board.getBoardCategory())
                 .attachFile(board.getAttachFile())
                 .createAt(board.getCreateAt())
                 .updateAt(board.getUpdateAt())
