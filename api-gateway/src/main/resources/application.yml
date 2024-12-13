@@ -30,9 +30,10 @@ spring:
         - id: reservation-service
           uri: lb://reservation-service
           predicates:
-            - Path=/api/v1/reservations/**
+            - Path=/api/v1/reservations/**, /api/v1/instruments/**
           filters:
             - RewritePath=/api/v1/reservations/(?<segment>.*), /api/v1/reservations/${segment}
+            - RewritePath=/api/v1/instruments/(?<segment>.*), /api/v1/instruments/${segment}
 
 
         - id: board-service

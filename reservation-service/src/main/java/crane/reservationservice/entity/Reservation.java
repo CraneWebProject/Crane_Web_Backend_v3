@@ -2,6 +2,7 @@ package crane.reservationservice.entity;
 
 import crane.reservationservice.entity.enums.Status;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,7 +15,9 @@ public class Reservation {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long reservation_id;
+    private Long reservationId;
+
+    private Long userId;
 
     @Column(nullable = false)
     private LocalDateTime time;
@@ -26,10 +29,31 @@ public class Reservation {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    @Column(nullable = false)
-    @JoinColumn(name = "instrument_id")
+    @JoinColumn(name = "instrumentId")
     @ManyToOne(fetch = FetchType.LAZY)
     private Instrument instrument;
 
 
+    public void updateReservation(LocalDateTime time,
+                                  boolean possible,
+                                  Instrument instrument,
+                                  Long userId){
+        this.time = time;
+        this.possible = possible;
+        this.instrument = instrument;
+        this.userId = userId;
+    }
+
+    @Builder
+    public Reservation(Long userId,
+                       LocalDateTime time,
+                       Boolean possible,
+                       Status status,
+                       Instrument instrument) {
+        this.userId = userId;
+        this.time = time;
+        this.possible = possible;
+        this.status = status;
+        this.instrument = instrument;
+    }
 }
