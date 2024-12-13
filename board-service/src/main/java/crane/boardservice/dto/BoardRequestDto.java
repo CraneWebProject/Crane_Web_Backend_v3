@@ -22,7 +22,6 @@ public class BoardRequestDto {
         this.content = content;
         this.boardCategory = boardCategory;
         this.attachFile = attachFile;
-
     }
 
 }

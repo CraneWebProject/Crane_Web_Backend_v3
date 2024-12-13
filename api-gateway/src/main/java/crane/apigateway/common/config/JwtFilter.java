@@ -1,13 +1,13 @@
 package crane.apigateway.common.config;
-
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpHeaders;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
+
 import reactor.core.publisher.Mono;
 
 import java.util.Collections;
@@ -27,7 +28,6 @@ public class JwtFilter implements WebFilter {
     private final JwtUtils jwtUtil;
     private final RouterValidator routerValidator;
     private final RedisTemplate<String, String> redisTemplate;
-
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
@@ -35,12 +35,13 @@ public class JwtFilter implements WebFilter {
 
         log.info("현재 요청 경로: {}", path);
 
+
         // 인증 예외 경로 설정
         if (path.equals("/api/v1/users") || path.equals("/api/v1/users/login")
                 || path.equals("/actuator/health") || path.equals("/actuator/prometheus")
                 || path.startsWith("/api/v1/users/sendmail") || path.startsWith("/api/v1/concerts/search")
                 || path.equals("/api/v1/concerts/search/autocomplete") || path.equals("/api/v1/users/oauth/kakao")
-                || path.equals("/api/v1/users//oauth/kakao/callback/")
+                || path.equals("/api/v1/users/oauth/kakao/callback")
                 || path.equals("/api/v1/concerts/top")
                 || path.equals("/api/v1/concerts/")
                 || (HttpMethod.GET.equals(request.getMethod()) && path.equals("/api/v1/concerts"))
@@ -77,13 +78,24 @@ public class JwtFilter implements WebFilter {
                     Collections.singletonList(new SimpleGrantedAuthority(userRole))
             );
 
-            return chain.filter(
-                    exchange.mutate()
-                            .request(request.mutate()
-                                    .header("X-Authenticated-User", String.valueOf(userId))
-                                    .build())
-                            .build()
-            ).contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
+            // JwtFilter 클래스 내부
+            HttpHeaders headers = new HttpHeaders();
+            headers.addAll(exchange.getRequest().getHeaders());
+            headers.add("X-Authenticated-User", String.valueOf(userId));
+
+            ServerHttpRequest mutatedRequest = new ServerHttpRequestDecorator(exchange.getRequest()) {
+                @Override
+                public HttpHeaders getHeaders() {
+                    return headers;
+                }
+            };
+
+            ServerWebExchange mutatedExchange = exchange.mutate()
+                    .request(mutatedRequest)
+                    .build();
+
+            return chain.filter(mutatedExchange)
+                    .contextWrite(ReactiveSecurityContextHolder.withAuthentication(auth));
 
         } catch (Exception e) {
             log.error("JWT validation failed", e);

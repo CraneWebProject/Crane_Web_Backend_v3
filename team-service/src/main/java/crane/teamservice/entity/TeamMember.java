@@ -19,7 +19,7 @@ public class TeamMember {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long TeamMember_id;
+    private Long teamMemberId;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -28,16 +28,16 @@ public class TeamMember {
     @CreatedDate
     private LocalDateTime createdAt;
 
-    private Long user_id;
+    private Long userId;
 
-    @JoinColumn(name = "team_id")
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Team team;
+    //@JoinColumn(name = "team_id")
+    //@ManyToOne(fetch = FetchType.LAZY)
+    private Long teamId; // team_id로 바꿔놨는데 Team team으로 가져오는게 더 나을까요.
 
     @Builder
-    public TeamMember(Role role, Long user_id, Team team) {
+    public TeamMember(Role role, Long userId, Long teamId) {
         this.role = role;
-        this.user_id = user_id;
-        this.team = team;
+        this.userId = userId;
+        this.teamId = teamId;
     }
 }

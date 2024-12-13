@@ -24,8 +24,10 @@ spring:
           uri: lb://team-service
           predicates:
             - Path=/api/v1/team/**
+            - Path=/api/v1/member/**
           filters:
             - RewritePath=/api/v1/team/(?<segment>.*), /api/v1/team/${segment}
+            - RewritePath=/api/v1/member/(?<segment>.*), /api/v1/member/${segment}
 
         - id: reservation-service
           uri: lb://reservation-service
