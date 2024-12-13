@@ -20,13 +20,18 @@ spring:
           filters:
             - RewritePath=/api/v1/users/(?<segment>.*), /api/v1/users/${segment}
 
-        - id: team-service
+        - id: team-service-team
           uri: lb://team-service
           predicates:
             - Path=/api/v1/team/**
-            - Path=/api/v1/member/**
           filters:
             - RewritePath=/api/v1/team/(?<segment>.*), /api/v1/team/${segment}
+
+        - id: team-service-member
+          uri: lb://team-service
+          predicates:
+            - Path=/api/v1/member/**
+          filters:
             - RewritePath=/api/v1/member/(?<segment>.*), /api/v1/member/${segment}
 
         - id: reservation-service
@@ -53,4 +58,13 @@ jwt:
 
 server:
   port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
 
