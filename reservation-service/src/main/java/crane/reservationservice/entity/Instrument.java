@@ -26,10 +26,8 @@ public class Instrument {
     }
 
     @Builder
-    public Instrument(Long instrumentId,
-                      String name,
+    public Instrument(String name,
                       Boolean isActive) {
-        this.instrumentId = instrumentId;
         this.name = name;
         this.isActive = isActive;
     }

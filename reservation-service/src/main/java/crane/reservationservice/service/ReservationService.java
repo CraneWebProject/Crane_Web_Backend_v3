@@ -123,7 +123,7 @@ public class ReservationService {
                 .instrument(instrument)
                 .possible(true)
                 .time(reservationRequestDto.getTime())
-                .status(reservationRequestDto.getStatus())
+                .status(Status.PENDING)
                 .userId(userId)
                 .build();
         reservationRepository.save(reservation);

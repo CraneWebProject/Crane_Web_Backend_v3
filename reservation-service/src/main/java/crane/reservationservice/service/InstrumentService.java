@@ -27,7 +27,6 @@ public class InstrumentService {
     @Transactional
     public InstrumentResponseDto createInstrument(InstrumentRequestDto requestDto) {
         //중복 name 체크
-        System.out.println("출력: " + requestDto);
         Optional<Instrument> optionalInstrument = instrumentRepository.findByName(requestDto.getName());
         if(optionalInstrument.isPresent()){
             throw new EntityExistsException("이미 존재하는 장비명입니다.");
@@ -70,7 +69,6 @@ public class InstrumentService {
     //삭제시 관련 예약 instrument null 로 바꿈
     @Transactional
     public void deleteInstrument(Long instrumentId) {
-        //관련 예약 삭제
         List<Reservation> reservationList = reservationRepository.findAllByInstrument(instrumentId);
 
         reservationList.stream()

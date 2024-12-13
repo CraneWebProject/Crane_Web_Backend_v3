@@ -30,7 +30,7 @@ public class Reservation {
     private Status status;
 
     @JoinColumn(name = "instrumentId")
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     private Instrument instrument;
 
 
