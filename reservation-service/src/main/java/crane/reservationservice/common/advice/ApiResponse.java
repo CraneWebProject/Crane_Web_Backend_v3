@@ -1,8 +1,10 @@
 package crane.reservationservice.common.advice;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor
 public class ApiResponse<T>{
     private String status;
     private String message;
