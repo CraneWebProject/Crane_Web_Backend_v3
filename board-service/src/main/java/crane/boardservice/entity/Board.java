@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.lang.management.LockInfo;
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class Board {
 
     @Id
@@ -51,7 +53,6 @@ public class Board {
         this.attachFile = attachFile;
         this.writer = writer;
         this.userId = userId;
-
     }
 
     public void updateBoard(String title, String content, BoardCategory boardCategory, String attachFile) {
