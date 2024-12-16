@@ -28,7 +28,7 @@ public class BoardResponseDto {
     private String writer;
 
     @Builder
-    public BoardResponseDto (String title, String content, Integer view, BoardCategory boardCategory, String attachFile, LocalDate createdAt, LocalDate updatedAt, String writer) {
+    private BoardResponseDto (String title, String content, Integer view, BoardCategory boardCategory, String attachFile, LocalDate createdAt, LocalDate updatedAt, String writer) {
         this.title = title;
         this.content = content;
         this.view = view;

@@ -19,7 +19,7 @@ import java.time.LocalDate;
 public class Reply {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long reply_id;
+    private Long replyId;
 
     private String content;
 
@@ -29,17 +29,17 @@ public class Reply {
     @LastModifiedDate
     private LocalDate updatedAt;
 
-    private Long user_id;
+    private Long userId;
 
-    private Long board_id;
+    private Long boardId;
 
     @Builder
-    public Reply(String content, LocalDate createdAt, LocalDate updatedAt, Long user_id, Long board_id){
+    public Reply(String content, LocalDate createdAt, LocalDate updatedAt, Long userId, Long boardId){
         this.content = content;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.user_id = user_id;
-        this.board_id = board_id;
+        this.userId = userId;
+        this.boardId = boardId;
     }
 
     public void updateReply(String content){

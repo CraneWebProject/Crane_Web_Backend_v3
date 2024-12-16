@@ -6,11 +6,17 @@ import crane.reservationservice.dto.ReservationResponseDto;
 import crane.reservationservice.entity.Reservation;
 import crane.reservationservice.service.ReservationService;
 import lombok.RequiredArgsConstructor;
+<<<<<<< HEAD
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+=======
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+>>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
 import java.util.List;
 
 @RestController
@@ -46,27 +52,42 @@ public class ReservationController {
     //예약하기
     @GetMapping("/make")
     public ResponseEntity<ApiResponse<ReservationResponseDto>> makeAReservation(@RequestHeader("X-Authenticated-User") Long userId,
+<<<<<<< HEAD
+                                                                                @RequestBody ReservationRequestDto reservationRequestDto) {
+        ReservationResponseDto reservationResponseDto = reservationService.makeReservation(reservationRequestDto, userId);
+=======
                                                                                 @RequestParam (value = "reservationId") Long reservationId ) {
         ReservationResponseDto reservationResponseDto = reservationService.makeReservation(reservationId, userId);
+>>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
         return ResponseEntity.ok(ApiResponse.success("예약 성공", reservationResponseDto));
     }
 
     //예약 취소
     @GetMapping("/cancel")
     public ResponseEntity<ApiResponse<ReservationResponseDto>> cancelReservation(@RequestHeader("X-Authenticated-User") Long userId,
+<<<<<<< HEAD
+                                                                                 @RequestBody ReservationRequestDto reservationRequestDto) {
+        ReservationResponseDto reservationResponseDto = reservationService.cancelReservation(reservationRequestDto, userId);
+=======
                                                                                  @RequestParam (value = "reservationId") Long reservationId ) {
         ReservationResponseDto reservationResponseDto = reservationService.cancelReservation(reservationId, userId);
+>>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
         return ResponseEntity.ok(ApiResponse.success("예약 취소 성공", reservationResponseDto));
     }
 
     //일간 장비별 예약목록
     @GetMapping("/listbydate")
+<<<<<<< HEAD
+    public ResponseEntity<ApiResponse<List<ReservationResponseDto>>> getListByDateAndInst(@RequestBody ReservationRequestDto reservationRequestDto) {
+        List<ReservationResponseDto> reservationResponseDtoList = reservationService.findReservationByDayAndInst(reservationRequestDto);
+=======
     public ResponseEntity<ApiResponse<List<ReservationResponseDto>>> getListByDateAndInst(@RequestParam(value = "date")
                                                                                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
                                                                                           LocalDate date,
                                                                                           @RequestParam(value = "instrumentId") long instrumentId
                                                                                           ) {
         List<ReservationResponseDto> reservationResponseDtoList = reservationService.findReservationByDayAndInst(date, instrumentId);
+>>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
         return ResponseEntity.ok(ApiResponse.success("일간 장비별 예약목록 조회 성공", reservationResponseDtoList));
     }
 
