@@ -15,10 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-<<<<<<< HEAD
-=======
+
 import java.time.LocalDate;
->>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -172,15 +170,10 @@ public class ReservationService {
 
     //예약하기
     @Transactional
-<<<<<<< HEAD
-    public ReservationResponseDto makeReservation(ReservationRequestDto reservationRequestDto, Long userId) {
-        UserResponseDto user = userClient.getUserById(userId).getData();
-        Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationRequestDto.getReservationId());
-=======
+
     public ReservationResponseDto makeReservation(Long reservationId, Long userId) {
         UserResponseDto user = userClient.getUserById(userId).getData();
         Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationId);
->>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
 
         if(!reservation.getPossible()) {
             throw new BadRequestException("예약 불가능한 시간대입니다.");
@@ -190,11 +183,7 @@ public class ReservationService {
             throw new BadRequestException("지난 시간은 예약이 불가능합니다");
         }
 
-<<<<<<< HEAD
-        List<Reservation> reservationList = reservationRepository.findByTime(reservationRequestDto.getTime());
-=======
         List<Reservation> reservationList = reservationRepository.findByTime(reservation.getTime());
->>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
         if(reservation.getInstrument().getName().equals("합주")){
             reservationList.stream()
                     .filter(r -> !r.getInstrument().getName().equals("합주"))
@@ -219,15 +208,9 @@ public class ReservationService {
     //신청자, 관리자, 매니저만 취소 가능
     //지난 예약은 취소 불가
     @Transactional
-<<<<<<< HEAD
-    public ReservationResponseDto cancelReservation(ReservationRequestDto reservationRequestDto, Long userId) {
-        UserResponseDto user = userClient.getUserById(userId).getData();
-        Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationRequestDto.getReservationId());
-=======
     public ReservationResponseDto cancelReservation(Long reservationId, Long userId) {
         UserResponseDto user = userClient.getUserById(userId).getData();
         Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationId);
->>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
 
         if(!reservation.getUserId().equals(userId)
                 && !(Objects.equals(user.getUserRole(), UserRole.ADMIN.toString()) || Objects.equals(user.getUserRole(), UserRole.MANAGER.toString()))) {
@@ -239,11 +222,8 @@ public class ReservationService {
         }
 
         //합주 예약 취소인 경우 장비 예약 허용
-<<<<<<< HEAD
-        List<Reservation> reservationList = reservationRepository.findByTime(reservationRequestDto.getTime());
-=======
+
         List<Reservation> reservationList = reservationRepository.findByTime(reservation.getTime());
->>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
         if(reservation.getInstrument().getName().equals("합주")){
             reservationList.stream()
                     .filter(r -> !r.getInstrument().getName().equals("합주"))
@@ -277,17 +257,11 @@ public class ReservationService {
 
 
     //일간 장비별 예약 목록
-<<<<<<< HEAD
-    public List<ReservationResponseDto> findReservationByDayAndInst(ReservationRequestDto reservationRequestDto) {
-        LocalDateTime startOfDay = LocalDateTime.now().minusDays(8).withHour(0).withMinute(0).withSecond(0);
-        LocalDateTime startOfNextDay = LocalDateTime.now().minusDays(7).withHour(0).withMinute(0).withSecond(0);
-        Instrument instrument = instrumentRepository.findByIdOrElseThrow(reservationRequestDto.getInstrumentId());
-=======
+
     public List<ReservationResponseDto> findReservationByDayAndInst(LocalDate date, Long instrumentId) {
         LocalDateTime startOfDay = date.atStartOfDay();
         LocalDateTime startOfNextDay = date.plusDays(1).atStartOfDay();
         Instrument instrument = instrumentRepository.findByIdOrElseThrow(instrumentId);
->>>>>>> 23f25e49bd2e373e3a4ee409417a74af510ae3c2
 
 
         List<Reservation> reservationList = reservationRepository.findAllByResDateAndInstrument(
