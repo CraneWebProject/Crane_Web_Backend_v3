@@ -51,6 +51,13 @@ spring:
             - RewritePath=/api/v1/boards/(?<segment>.*), /api/v1/boards/${segment}
             - RewritePath=/api/v1/reply/(?<segment>.*), /api/v1/reply/${segment}
 
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+          filters:
+            - RewritePath=/api/v1/notification/(?<segment>.*), /api/v1/notification/${segment}
+
 
 
 jwt:
