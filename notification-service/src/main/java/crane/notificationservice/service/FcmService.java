@@ -3,16 +3,21 @@ package crane.notificationservice.service;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.Message;
 import com.google.firebase.messaging.Notification;
+import crane.notificationservice.entity.FcmToken;
+import crane.notificationservice.repository.FcmTokenRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
 public class FcmService {
 
     private final FirebaseMessaging firebaseMessaging;
+    private final FcmTokenRepository fcmTokenRepository;
 
-    public void sendPushNotificationToUser(String userId, String title, String body) {
+    public void sendPushNotificationToUser(Long userId, String title, String body) {
         try {
             // DB 또는 캐시에서 해당 userId의 FCM 토큰을 가져오는 로직 필요
             String fcmToken = getFcmTokenByUserId(userId); // 구현 필요
@@ -37,16 +42,16 @@ public class FcmService {
         }
     }
 
-    private String getFcmTokenByUserId(String userId) {
+    private String getFcmTokenByUserId(Long userId) {
         // DB 또는 캐시에서 userId에 해당하는 FCM 토큰을 조회하는 로직 구현
         // 예시:
         // User user = userRepository.findByUserId(userId);
         // return user != null ? user.getFcmToken() : null;
-
-        // 임시로 하드코딩
-        if (userId.equals("user123")){
-            return "YOUR_FCM_TOKEN";
+        Optional<FcmToken> optionalFcmToken =  fcmTokenRepository.findLatestByUserId(userId);
+        if(optionalFcmToken.isPresent()) {
+            return optionalFcmToken.get().getFcmToken();
         }
+
         return null;
     }
 }

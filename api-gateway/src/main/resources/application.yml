@@ -54,9 +54,10 @@ spring:
         - id: notification-service
           uri: lb://notification-service
           predicates:
-            - Path=/api/v1/notifications/**
+            - Path=/api/v1/notifications/**, /api/v1/fcm/**
           filters:
             - RewritePath=/api/v1/notification/(?<segment>.*), /api/v1/notification/${segment}
+            - RewritePath=/api/v1/fcm/(?<segment>.*), /api/v1/fcm/${segment}
 
 
 

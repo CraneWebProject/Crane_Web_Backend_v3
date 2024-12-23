@@ -35,7 +35,7 @@ public class ReservationEventConsumer {
         try {
             ReservationEvent reservationEvent = parseAndValidateEvent(message);
 
-            fcmService.sendPushNotificationToUser(reservationEvent.getUserId().toString(), reservationEvent.getReservationStatus(), reservationEvent.getNotificationMessage());
+            fcmService.sendPushNotificationToUser(reservationEvent.getUserId(), reservationEvent.getReservationStatus(), reservationEvent.getNotificationMessage());
             ack.acknowledge();
             log.info("푸시 발송 완료 및 offset commit = partition: {}, offset: {}, message: {} ", partition, offset, message);
         } catch (JsonProcessingException e) {
