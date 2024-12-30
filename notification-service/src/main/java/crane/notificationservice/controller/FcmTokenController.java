@@ -2,6 +2,7 @@ package crane.notificationservice.controller;
 
 import crane.notificationservice.common.advice.ApiResponse;
 import crane.notificationservice.dto.TokenRequestDto;
+import crane.notificationservice.service.FcmService;
 import crane.notificationservice.service.FcmTokenService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +26,14 @@ public class FcmTokenController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error("Error while updating FCM token"));
         }
+    }
+
+    @DeleteMapping("/{fcmToken}")
+    public ResponseEntity<ApiResponse<?>> deleteFcmToken(
+            @RequestHeader("X-Authenticated-User") Long userId,
+            @PathVariable String fcmToken){
+        fcmTokenService.deleteFcmToken(userId, fcmToken);
+        return ResponseEntity.ok(ApiResponse.success("Successfully deleted FCM token"));
     }
 
 

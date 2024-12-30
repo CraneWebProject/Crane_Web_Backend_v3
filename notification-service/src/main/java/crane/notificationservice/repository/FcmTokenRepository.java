@@ -15,5 +15,9 @@ public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
 
     Optional<FcmToken> findLatestByUserId(Long userId);
 
+    @Query("DELETE FROM FcmToken f WHERE f.fcmToken = :fcmToken AND f.userId = :userId")
+    int deleteByFcmTokenAndUserId(@Param("userId") Long userId,
+                                  @Param("fcmToken") String fcmToken);
+
     boolean existsByFcmToken(String fcmToken);
 }

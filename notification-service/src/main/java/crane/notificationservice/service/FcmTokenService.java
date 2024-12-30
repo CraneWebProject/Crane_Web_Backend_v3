@@ -43,6 +43,21 @@ public class FcmTokenService {
 
     }
 
+    @Transactional
+    public void deleteFcmToken(Long userId, String fcmToken) {
+        Optional<FcmToken> optionalFcmToken =  fcmTokenRepository.findByUserIdAndFcmToken(userId, fcmToken);
+
+        if (optionalFcmToken.isPresent()) {
+            int deletedCount = fcmTokenRepository.deleteByFcmTokenAndUserId(userId, fcmToken);
+
+            if(deletedCount == 0){
+                throw new IllegalArgumentException("토큰이 존재하지 않거나 사용자에게 속해 있지 않습니다.");
+            }
+        }else {
+            throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
+        }
+    }
+
     public String getLatestFcmToken(Long userId) {
         return fcmTokenRepository.findLatestByUserId(userId)
                 .map(FcmToken::getFcmToken)
