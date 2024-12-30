@@ -1,13 +1,17 @@
 package crane.notificationservice.repository;
 
 import crane.notificationservice.entity.FcmToken;
+import feign.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
 public interface FcmTokenRepository extends JpaRepository<FcmToken, Long> {
 
-    Optional<FcmToken> findByUserIdAndFcmToken(Long userId, String fcmToken);
+    @Query("SELECT f FROM FcmToken f WHERE f.fcmToken = :fcmToken AND f.userId = :userId")
+    Optional<FcmToken> findByUserIdAndFcmToken(@Param("userId") Long userId,
+                                               @Param("fcmToken") String fcmToken);
 
     Optional<FcmToken> findLatestByUserId(Long userId);
 

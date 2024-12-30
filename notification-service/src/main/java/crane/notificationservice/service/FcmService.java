@@ -20,7 +20,7 @@ public class FcmService {
     public void sendPushNotificationToUser(Long userId, String title, String body) {
         try {
             // DB 또는 캐시에서 해당 userId의 FCM 토큰을 가져오는 로직 필요
-            String fcmToken = getFcmTokenByUserId(userId); // 구현 필요
+            String fcmToken = getFcmTokenByUserId(userId);
 
             if (fcmToken != null) {
                 Message message = Message.builder()
@@ -48,10 +48,6 @@ public class FcmService {
         // User user = userRepository.findByUserId(userId);
         // return user != null ? user.getFcmToken() : null;
         Optional<FcmToken> optionalFcmToken =  fcmTokenRepository.findLatestByUserId(userId);
-        if(optionalFcmToken.isPresent()) {
-            return optionalFcmToken.get().getFcmToken();
-        }
-
-        return null;
+        return optionalFcmToken.map(FcmToken::getFcmToken).orElse(null);
     }
 }
