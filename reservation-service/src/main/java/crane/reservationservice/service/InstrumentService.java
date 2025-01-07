@@ -72,7 +72,7 @@ public class InstrumentService {
         List<Reservation> reservationList = reservationRepository.findAllByInstrument(instrumentId);
 
         reservationList.stream()
-                .forEach(r -> r.updateReservation(r.getTime(), r.getPossible(), null, r.getUserId()));
+                .forEach(r -> r.updateReservation(r.getTime(), r.getPossible(), null, r.getUserId(), null));
 
         reservationRepository.deleteById(instrumentId);
 

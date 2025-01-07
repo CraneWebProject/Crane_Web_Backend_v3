@@ -25,7 +25,6 @@ public class Reservation {
     @Column(nullable = false)
     private Boolean possible;
 
-    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Status status;
 
@@ -37,11 +36,13 @@ public class Reservation {
     public void updateReservation(LocalDateTime time,
                                   boolean possible,
                                   Instrument instrument,
-                                  Long userId){
+                                  Long userId,
+                                  Status status) {
         this.time = time;
         this.possible = possible;
         this.instrument = instrument;
         this.userId = userId;
+        this.status = status;
     }
 
     @Builder
