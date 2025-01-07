@@ -17,7 +17,7 @@ public class FcmTokenController {
     private final FcmTokenService fcmTokenService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<?>> updateFcmToken(
+    public ResponseEntity<ApiResponse<String>> updateFcmToken(
             @RequestHeader("X-Authenticated-User") Long userId,
             @RequestBody TokenRequestDto dto) {
         try {
@@ -29,7 +29,7 @@ public class FcmTokenController {
     }
 
     @DeleteMapping("/{fcmToken}")
-    public ResponseEntity<ApiResponse<?>> deleteFcmToken(
+    public ResponseEntity<ApiResponse<String>> deleteFcmToken(
             @RequestHeader("X-Authenticated-User") Long userId,
             @PathVariable String fcmToken){
         fcmTokenService.deleteFcmToken(userId, fcmToken);
@@ -38,7 +38,7 @@ public class FcmTokenController {
 
 
     @GetMapping
-    public ResponseEntity<ApiResponse<?>> getFcmToken(
+    public ResponseEntity<ApiResponse<String>> getFcmToken(
             @RequestHeader("X-Authenticated-User") Long userId
     ){
         try {
