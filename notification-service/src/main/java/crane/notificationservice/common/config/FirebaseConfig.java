@@ -13,7 +13,6 @@ import java.io.IOException;
 @Configuration
 public class FirebaseConfig {
     String PathFCMServiceAccount = System.getenv("PATH_FCM_SERVICEACCOUNT");
-//    String PathFCMServiceAccount = "D:\\CODE\\crane-1982-firebase-adminsdk-v8z1e-6fa446e551.json";
 
     @Bean
     public FirebaseMessaging firebaseMessaging() throws IOException {

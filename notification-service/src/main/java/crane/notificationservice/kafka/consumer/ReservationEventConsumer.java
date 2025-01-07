@@ -48,21 +48,4 @@ public class ReservationEventConsumer {
         return objectMapper.readValue(message, ReservationEvent.class);
     }
 
-
-//    @KafkaListener(topics = "reservation-events-topic", groupId = "notification-group")
-//    public void listen(String message) {
-//        try {
-//            // Kafka 메시지 파싱 (JSON 형태라고 가정)
-//            // 예: {"userId": "user123", "title": "새 알림", "body": "새로운 메시지가 도착했습니다."}
-//            ObjectMapper objectMapper = new ObjectMapper();
-//            ReservationEvent reservationEvent = objectMapper.readValue(message, ReservationEvent.class);
-//
-//            // FCM 푸시 알림 전송
-//            fcmService.sendPushNotificationToUser(reservationEvent.getUserId().toString(), reservationEvent.getReservationStatus(), reservationEvent.getNotificationMessage());
-//        } catch (JsonProcessingException e) {
-//            // JSON 파싱 오류 처리
-//            e.printStackTrace();
-//        }
-//    }
-
 }

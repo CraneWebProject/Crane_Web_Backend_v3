@@ -25,7 +25,6 @@ public class FcmTokenService {
     public void updateFcmToken(Long userId, TokenRequestDto dto) {
         //사용자Id로 List 검색
         //List 에서 같은 Token이 존재하면 pass
-//        Optional<FcmToken> optionalFcmToken = fcmTokenRepository.findByUserIdAndFcmToken(userId, dto.getFcmToken());
         LocalDateTime now = LocalDateTime.now();
         if(fcmTokenRepository.existsByFcmToken(dto.getFcmToken())){
             throw new EntityExistsException("FCM token already exists");
