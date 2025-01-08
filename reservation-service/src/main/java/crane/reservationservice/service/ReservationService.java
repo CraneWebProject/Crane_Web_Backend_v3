@@ -9,6 +9,7 @@ import crane.reservationservice.entity.Instrument;
 import crane.reservationservice.entity.Reservation;
 import crane.reservationservice.entity.enums.Status;
 import crane.reservationservice.entity.enums.UserRole;
+import crane.reservationservice.kafka.ReservationEventProducer;
 import crane.reservationservice.repository.InstrumentRepository;
 import crane.reservationservice.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,8 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final InstrumentRepository instrumentRepository;
     private final UserClient userClient;
+
+    private final ReservationEventProducer reservationEventProducer;
 
     //Batch Scheduler 를 통해 미리 1주간 예약을 생성해 둠.
     //예약 신청시 생성된 예약에 user, team 등 정보를 추가하고 예약 가능 상태를 불가능으로 바꿈.
@@ -96,7 +99,7 @@ public class ReservationService {
 
         reservationList.stream()
                 .filter(r -> r.getInstrument().getName().equals("합주"))
-                .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId()));
+                .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId(), r.getStatus()));
     }
 
     //n일 뒤 장비 예약 open
@@ -109,22 +112,24 @@ public class ReservationService {
 
         reservationList.stream()
                 .filter(r -> !r.getInstrument().getName().equals("합주"))
-                .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId()));
+                .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId(), r.getStatus()));
     }
 
     //단일 예약 생성
+    //관리자 및 임원만 가능
     @Transactional
     public ReservationResponseDto createReservation(ReservationRequestDto reservationRequestDto, Long userId) {
         UserResponseDto user = userClient.getUserById(userId).getData();
         Instrument instrument = instrumentRepository.findByIdOrElseThrow(reservationRequestDto.getInstrumentId());
 
+        //권한 체크 추가
 
         Reservation reservation = Reservation.builder()
                 .instrument(instrument)
                 .possible(true)
                 .time(reservationRequestDto.getTime())
                 .status(Status.PENDING)
-                .userId(userId)
+                .userId(null)
                 .build();
         reservationRepository.save(reservation);
         return ReservationResponseDto.from(reservation);
@@ -160,7 +165,8 @@ public class ReservationService {
                 updateTime,
                 reservation.getPossible(),
                 updateInstrument,
-                reservation.getUserId()
+                reservation.getUserId(),
+                reservation.getStatus()
         );
 
         return ReservationResponseDto.from(reservation);
@@ -168,7 +174,6 @@ public class ReservationService {
 
     //예약하기
     @Transactional
-
     public ReservationResponseDto makeReservation(Long reservationId, Long userId) {
         UserResponseDto user = userClient.getUserById(userId).getData();
         Reservation reservation = reservationRepository.findByIdOrElseThrow(reservationId);
@@ -185,19 +190,23 @@ public class ReservationService {
         if(reservation.getInstrument().getName().equals("합주")){
             reservationList.stream()
                     .filter(r -> !r.getInstrument().getName().equals("합주"))
-                    .forEach(r -> r.updateReservation(r.getTime(), false, r.getInstrument(), r.getUserId()));
+                    .forEach(r -> r.updateReservation(r.getTime(), false, r.getInstrument(), r.getUserId(),r.getStatus()));
         }else{
             reservationList.stream()
                     .filter(r -> r.getInstrument().getName().equals("합주"))
-                    .forEach(r -> r.updateReservation(r.getTime(), false, r.getInstrument(), r.getUserId()));
+                    .forEach(r -> r.updateReservation(r.getTime(), false, r.getInstrument(), r.getUserId(), r.getStatus()));
         }
 
         reservation.updateReservation(
                 reservation.getTime(),
                 false,
                 reservation.getInstrument(),
-                userId
+                userId,
+                Status.CONFIRMED
         );
+
+        //예약 완료 메시지 처리 로직
+        reservationEventProducer.sendReservationSuccessEvent(reservationId, reservation.getReservationId(), reservation.getTime(), userId);
 
         return ReservationResponseDto.from(reservation);
     }
@@ -225,19 +234,23 @@ public class ReservationService {
         if(reservation.getInstrument().getName().equals("합주")){
             reservationList.stream()
                     .filter(r -> !r.getInstrument().getName().equals("합주"))
-                    .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId()));
+                    .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId(), r.getStatus()));
         }else{
             reservationList.stream()
                     .filter(r -> r.getInstrument().getName().equals("합주"))
-                    .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId()));
+                    .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId(), r.getStatus()));
         }
 
         reservation.updateReservation(
                 reservation.getTime(),
                 true,
                 reservation.getInstrument(),
+                null,
                 null
         );
+
+        //예약 취소 완료 발송 로직
+        reservationEventProducer.sendReservationCancelEvent(reservationId, reservation.getReservationId(), reservation.getTime(), userId);
 
         return ReservationResponseDto.from(reservation);
     }

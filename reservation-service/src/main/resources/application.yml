@@ -8,8 +8,8 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/crane?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: root
-    password: hyeseong
+    username: ${MYSQL_USER}
+    password: ${MYSQL_PASSWORD}
 
   jpa:
     show-sql: true
@@ -23,6 +23,15 @@ spring:
     redis:
       host: localhost
       port: 6379
+
+  kafka:
+    bootstrap-servers: localhost:19092, localhost:19093, localhost:19094
+    topic:
+      reservation-events: reservation-events-topic
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
 
 eureka:
   client:
