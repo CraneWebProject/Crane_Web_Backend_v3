@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Getter
 public class TeamMemberResponseDto {
+    private Long teamMemberId;
+
     private Role role;
 
     private Long userId;
@@ -21,7 +23,8 @@ public class TeamMemberResponseDto {
     private Long teamId;
 
     @Builder
-    public TeamMemberResponseDto(Role role, Long userId, LocalDateTime createdAt, Long teamId) {
+    public TeamMemberResponseDto(Long teamMemberId, Role role, Long userId, LocalDateTime createdAt, Long teamId) {
+        this.teamMemberId = teamMemberId;
         this.role = role;
         this.userId = userId;
         this.createdAt = createdAt;
@@ -30,6 +33,7 @@ public class TeamMemberResponseDto {
 
     public static TeamMemberResponseDto from(TeamMember teamMember){
         return TeamMemberResponseDto.builder()
+                .teamMemberId(teamMember.getTeamMemberId())
                 .role(teamMember.getRole())
                 .userId(teamMember.getUserId())
                 .createdAt(teamMember.getCreatedAt())

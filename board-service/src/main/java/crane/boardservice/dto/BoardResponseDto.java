@@ -7,10 +7,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
 public class BoardResponseDto {
+    private Long boardId;
+
     private String title;
 
     private String content;
@@ -21,14 +24,15 @@ public class BoardResponseDto {
 
     private String attachFile;
 
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
-    private LocalDate updatedAt;
+    private LocalDateTime updatedAt;
 
     private String writer;
 
     @Builder
-    private BoardResponseDto (String title, String content, Integer view, BoardCategory boardCategory, String attachFile, LocalDate createdAt, LocalDate updatedAt, String writer) {
+    private BoardResponseDto (Long boardId, String title, String content, Integer view, BoardCategory boardCategory, String attachFile, LocalDateTime createdAt, LocalDateTime updatedAt, String writer) {
+        this.boardId = boardId;
         this.title = title;
         this.content = content;
         this.view = view;
@@ -41,13 +45,14 @@ public class BoardResponseDto {
 
     public static BoardResponseDto from(Board board) {
         return BoardResponseDto.builder()
+                .boardId(board.getBoardId())
                 .title(board.getTitle())
                 .content(board.getContent())
                 .view(board.getView())
                 .boardCategory(board.getBoardCategory())
                 .attachFile(board.getAttachFile())
-                .createdAt(board.getCreatedAt() != null ? LocalDate.from(board.getCreatedAt()) : null) // null 체크 추가
-                .updatedAt(board.getUpdatedAt() != null ? LocalDate.from(board.getUpdatedAt()) : null) // null 체크 추가
+                .createdAt(board.getCreatedAt() != null ? LocalDateTime.from(board.getCreatedAt()) : null) // null 체크 추가
+                .updatedAt(board.getUpdatedAt() != null ? LocalDateTime.from(board.getUpdatedAt()) : null) // null 체크 추가
                 .writer(board.getWriter())
                 .build();
     }
