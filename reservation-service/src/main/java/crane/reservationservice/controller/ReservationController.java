@@ -78,4 +78,29 @@ public class ReservationController {
         return ResponseEntity.ok(ApiResponse.success("사용자 별 예약 목록 조회 성공", reservationResponseDtoList));
     }
 
+
+    @PostMapping("/init")
+    public ResponseEntity<ApiResponse<Void>> initReservation(){
+        reservationService.initReservation();
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @PostMapping("init-nextweek")
+    public ResponseEntity<ApiResponse<Void>> initNextWeekReservation(){
+        reservationService.createReservationAfterNDays(8);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @GetMapping("open-ensemble")
+    public ResponseEntity<ApiResponse<Void>> openEnSambleReservation(){
+        reservationService.openEnsembleAfterNDays(7);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @GetMapping("open-inst")
+    public ResponseEntity<ApiResponse<Void>> openInstReservation(){
+        reservationService.openInstAfterNDays(7);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
 }
