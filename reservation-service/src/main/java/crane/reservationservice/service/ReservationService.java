@@ -45,13 +45,14 @@ public class ReservationService {
     //예약이 없는경우 실행되도록 할 것.
     @Transactional
     public void initReservation(){
+        LocalDateTime now = LocalDateTime.now();
         LocalDateTime startOfDay;
         LocalDateTime endOfDay;
         List<Reservation> reservationList;
 
         for(int i = 0; i < 8; i++){
-            startOfDay = LocalDateTime.now().minusDays(i).withHour(0).withMinute(0).withSecond(0);
-            endOfDay = LocalDateTime.now().plusDays(i).withHour(23).withMinute(59).withSecond(59);
+            startOfDay = now.plusDays(i).withHour(0).withMinute(0).withSecond(0); // now 기준 계산
+            endOfDay = now.plusDays(i).withHour(23).withMinute(59).withSecond(59); // now 기준 계산
 
             reservationList = reservationRepository.findAllByDate(startOfDay, endOfDay);
 
