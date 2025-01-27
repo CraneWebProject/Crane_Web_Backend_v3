@@ -116,8 +116,6 @@ public class ReservationService {
                 .forEach(r -> r.updateReservation(r.getTime(), true, r.getInstrument(), r.getUserId(), r.getStatus()));
     }
 
-
-
     //단일 예약 생성
     //관리자 및 임원만 가능
     @Transactional

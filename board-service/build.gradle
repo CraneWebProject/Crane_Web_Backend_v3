@@ -43,6 +43,11 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
     implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j'
 
+    // 레디스 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // batch 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-batch'
 }
 
 tasks.named('test') {

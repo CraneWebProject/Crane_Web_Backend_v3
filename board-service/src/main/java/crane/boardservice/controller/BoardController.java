@@ -3,6 +3,7 @@ package crane.boardservice.controller;
 import crane.boardservice.common.advice.ApiResponse;
 import crane.boardservice.dto.BoardRequestDto;
 import crane.boardservice.dto.BoardResponseDto;
+import crane.boardservice.entity.enums.BoardCategory;
 import crane.boardservice.service.BoardService;
 import crane.boardservice.service.ReplyService;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,17 @@ public class BoardController {
     private final BoardService boardService;
     private final ReplyService replyService;
 
+    // 카테고리 게시글 조회
+    @GetMapping("/category/{boardCategory}")
+    public ResponseEntity<ApiResponse<Page<BoardResponseDto>>> getBoardsByCategory(Pageable pageable, @PathVariable BoardCategory boardCategory){
+        Page<BoardResponseDto> boardResponseDtoList = boardService.readBoardsList(boardCategory, pageable);
+        return ResponseEntity.ok(ApiResponse.success(boardCategory + "카테고리 게시판 불러오기 완료", boardResponseDtoList));
+    }
+
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<BoardResponseDto>>> getBoards(Pageable pageable){
-        Page<BoardResponseDto> boardResponseDtoList = boardService.readBoardsList(pageable);
-        return ResponseEntity.ok(ApiResponse.success("게시판 불러오기 완료", boardResponseDtoList));
+    public ResponseEntity<ApiResponse<Page<BoardResponseDto>>> getAllBoards(Pageable pageable){
+        Page<BoardResponseDto> boardResponseDtoPage = boardService.readAllBoard(pageable);
+        return ResponseEntity.ok(ApiResponse.success("전체 게시글 불러오기 완료", boardResponseDtoPage));
     }
 
     @PostMapping("/write")

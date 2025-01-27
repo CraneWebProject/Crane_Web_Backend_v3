@@ -66,7 +66,7 @@ public class ReservationController {
                                                                                           @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
                                                                                           LocalDate date,
                                                                                           @RequestParam(value = "instrumentId") long instrumentId
-                                                                                          ) {
+    ) {
         List<ReservationResponseDto> reservationResponseDtoList = reservationService.findReservationByDayAndInst(date, instrumentId);
         return ResponseEntity.ok(ApiResponse.success("일간 장비별 예약목록 조회 성공", reservationResponseDtoList));
     }
@@ -77,7 +77,6 @@ public class ReservationController {
         List<ReservationResponseDto> reservationResponseDtoList = reservationService.findReservationByUser(userId);
         return ResponseEntity.ok(ApiResponse.success("사용자 별 예약 목록 조회 성공", reservationResponseDtoList));
     }
-
 
     @PostMapping("/init")
     public ResponseEntity<ApiResponse<Void>> initReservation(){

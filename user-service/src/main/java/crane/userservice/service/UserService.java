@@ -13,6 +13,7 @@ import crane.userservice.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -108,6 +109,7 @@ public class UserService {
         return UserResponseDto.from(user);
     }
 
+    @CacheEvict(value = "userById", key = "#id")
     @Transactional
     public UserResponseDto updateUser(Long id, UserRequestDto userRequestDto) {
         String newPassword = null;
@@ -124,6 +126,7 @@ public class UserService {
         return UserResponseDto.from(user);
     }
 
+    @CacheEvict(value = "userById", key = "#id")
     @Transactional
     public void deleteUser(Long id, String password) {
         User user = userRepository.findById(id)

@@ -11,6 +11,9 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 public class TeamResponseDto {
+
+    private Long teamId;
+
     private String teamName;
 
     private LocalDateTime createdAt;
@@ -20,7 +23,8 @@ public class TeamResponseDto {
     private TeamType teamType;
 
     @Builder
-    private TeamResponseDto(String teamName, LocalDateTime createdAt, LocalDateTime updatedAt, TeamType teamType) {
+    private TeamResponseDto(Long teamId,String teamName, LocalDateTime createdAt, LocalDateTime updatedAt, TeamType teamType) {
+        this.teamId = teamId;
         this.teamName = teamName;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -29,6 +33,7 @@ public class TeamResponseDto {
 
     public static TeamResponseDto from(Team team){
         return TeamResponseDto.builder()
+                .teamId(team.getTeamId())
                 .teamName(team.getTeamName())
                 .createdAt(team.getCreatedAt())
                 .updatedAt(team.getUpdatedAt())
