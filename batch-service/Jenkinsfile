@@ -1,0 +1,139 @@
+pipeline {
+    agent any
+
+    environment {
+        SERVICE_NAME = 'batch-service'
+        IMAGE_TAG = "batch-service:latest" // 로컬 이미지 태그
+        LOCAL_PORT = "8086" // 실행할 포트
+    }
+
+    stages {
+        stage('Prepare Config') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'REDIS_HOST', variable: 'REDIS_HOST'),
+                    string(credentialsId: 'REDIS_PORT', variable: 'REDIS_PORT'),
+                    string(credentialsId: 'EUREKA_URL', variable: 'EUREKA_URL'),
+                    string(credentialsId: 'MYSQL_URL', variable: 'MYSQL_URL'),
+                    string(credentialsId: 'MYSQL_USER' variable: 'MYSQL_USER'),
+                    string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD')
+                ]) {
+                    script {
+                        echo "Preparing configuration values..."
+                        echo "REDIS_HOST: ${REDIS_HOST}"
+                        echo "REDIS_PORT: ${REDIS_PORT}"
+
+                        // 필수 환경 변수 확인
+                        if (!REDIS_HOST || !REDIS_PORT) {
+                            error("Redis 설정이 누락되었습니다.")
+                        }
+
+                        echo "✅ 환경 변수 확인 완료."
+                    }
+                }
+            }
+        }
+
+        stage('Check Changes') {
+            steps {
+                script {
+                    def changes = sh(script: "git diff --name-only HEAD^", returnStdout: true).trim()
+                    def serviceChanged = changes.split('\n').any { it.startsWith('batch-service/') }
+
+                    if (!serviceChanged) {
+                        currentBuild.result = 'NOT_BUILT'
+                        error('No changes in batch-service directory, skipping build')
+                    }
+                    echo "✅ batch-service 변경 사항 감지됨. 빌드를 진행합니다."
+                }
+            }
+        }
+
+        stage('Checkout') {
+            steps {
+                git branch: 'msa',
+                    url: 'https://github.com/CraneWebProject/Crane_Web_Backend_v3'
+
+                script {
+                    def gitCommit = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
+                    echo "✅ 현재 빌드하는 커밋: ${gitCommit}"
+                }
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('batch-service') {
+                    sh '''
+                        chmod +x gradlew
+                        ./gradlew clean build -x test
+                    '''
+                }
+            }
+            post {
+                success {
+                    echo "✅ Build 단계 완료"
+                }
+                failure {
+                    error "❌ Build 단계 실패"
+                }
+            }
+        }
+
+        stage('Docker Build & Run') {
+            steps {
+                script {
+                    sh '''
+                    docker build -t $IMAGE_TAG \
+                        --build-arg REDIS_HOST=$REDIS_HOST \
+                        --build-arg REDIS_PORT=$REDIS_PORT \
+                        --build-arg EUREKA_URL=$EUREKA_URL \
+                        --build-arg MYSQL_URL=$MYSQL_URL \
+                        --build-arg MYSQL_USER=$MYSQL_USER \
+                        --build-arg MYSQL_PASSWORD=$MYSQL_PASSWORD \
+                        batch-service/
+
+                    # 기존 컨테이너 종료 후 삭제
+                    docker stop $SERVICE_NAME || true
+                    docker rm $SERVICE_NAME || true
+
+                    # 새 컨테이너 실행
+                    docker run -d --name $SERVICE_NAME \
+                        -e REDIS_HOST=$REDIS_HOST \
+                        -e REDIS_PORT=$REDIS_PORT \
+                        -e EUREKA_URL=$EUREKA_URL \
+                        -e MYSQL_URL=$MYSQL_URL \
+                        -e MYSQL_USER=$MYSQL_USER \
+                        -e MYSQL_PASSWORD=$MYSQL_PASSWORD \
+                        -p $LOCAL_PORT:8086 $IMAGE_TAG
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo """
+            ===========================================
+            ✅ Pipeline Successfully Completed
+            Service: ${SERVICE_NAME}
+            Image: ${IMAGE_TAG}
+            Port: ${LOCAL_PORT}
+            ===========================================
+            """
+        }
+        failure {
+            echo """
+            ===========================================
+            ❌ Pipeline Failed
+            Service: ${SERVICE_NAME}
+            Stage: ${currentBuild.result}
+            ===========================================
+            """
+        }
+        always {
+            cleanWs()
+        }
+    }
+}
