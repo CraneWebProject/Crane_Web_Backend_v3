@@ -3,21 +3,17 @@ pipeline {
 
     environment {
         SERVICE_NAME = 'eureka-server'
-        IMAGE_TAG = "eureka-server:latest" // 로컬 이미지 태그
-        LOCAL_PORT = "8761" // 실행할 포트
+        IMAGE_TAG = "eureka-server:latest"
+        LOCAL_PORT = "8761"
+        EUREKA_URL = credentials('EUREKA_URL') // ✅ 환경 변수 설정
     }
 
     stages {
-        stage('Prepare Config') {
+        stage('Check Environment Variables') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'EUREKA_URL', variable: 'EUREKA_URL'),
-                ]) {
-                    script {
-                        echo "Preparing configuration values..."
-
-                        echo "✅ 환경 변수 확인 완료."
-                    }
+                script {
+                    echo "✅ Jenkins 환경 변수 확인..."
+                    echo "🔍 EUREKA_URL: $EUREKA_URL"
                 }
             }
         }
@@ -72,6 +68,8 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "🔍 현재 EUREKA_URL 값: $EUREKA_URL"
+
                     docker build -t $IMAGE_TAG \
                         --build-arg EUREKA_URL=$EUREKA_URL \
                         eureka-server/
