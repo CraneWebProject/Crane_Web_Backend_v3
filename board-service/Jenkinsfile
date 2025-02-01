@@ -6,7 +6,7 @@ pipeline {
         IMAGE_TAG = "board-service:latest"
         LOCAL_PORT = "8084"
         // ✅ 환경 변수 설정
-        REDIS_URL = credentials('REDIS_HOST')
+        REDIS_HOST = credentials('REDIS_HOST')
         REDIS_PORT = credentials('REDIS_PORT')
         MYSQL_URL = credentials('MYSQL_URL')
         MYSQL_USER = credentials('MYSQL_USER')
