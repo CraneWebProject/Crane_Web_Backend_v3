@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@Table(name = "board", indexes = @Index(name = "", columnList = ""))
+@Table(name = "board")
 public class Board {
 
     @Id
