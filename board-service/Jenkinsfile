@@ -3,33 +3,24 @@ pipeline {
 
     environment {
         SERVICE_NAME = 'board-service'
-        IMAGE_TAG = "board-service:latest" // 로컬 이미지 태그
-        LOCAL_PORT = "8084" // 실행할 포트
+        IMAGE_TAG = "board-service:latest"
+        LOCAL_PORT = "8084"
+        // ✅ 환경 변수 설정
+        REDIS_URL = credentials('REDIS_HOST')
+        REDIS_PORT = credentials('REDIS_PORT')
+        MYSQL_URL = credentials('MYSQL_URL')
+        MYSQL_USER = credentials('MYSQL_USER')
+        MYSQL_PASSWORD = credentials('MYSQL_PASSWORD')
+        EUREKA_URL = credentials('EUREKA_URL')
     }
 
     stages {
-        stage('Prepare Config') {
+        stage('Check Environment Variables') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'REDIS_HOST', variable: 'REDIS_HOST'),
-                    string(credentialsId: 'REDIS_PORT', variable: 'REDIS_PORT'),
-                    string(credentialsId: 'EUREKA_URL', variable: 'EUREKA_URL'),
-                    string(credentialsId: 'MYSQL_URL', variable: 'MYSQL_URL'),
-                    string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
-                    string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD')
-                ]) {
-                    script {
-                        echo "Preparing configuration values..."
-                        echo "REDIS_HOST: ${REDIS_HOST}"
-                        echo "REDIS_PORT: ${REDIS_PORT}"
-
-                        // 필수 환경 변수 확인
-                        if (!REDIS_HOST || !REDIS_PORT) {
-                            error("Redis 설정이 누락되었습니다.")
-                        }
-
-                        echo "✅ 환경 변수 확인 완료."
-                    }
+                script {
+                    echo "✅ Jenkins 환경 변수 확인..."
+                    echo "🔍 REDIS_HOST: $REDIS_HOST"
+                    echo "🔍 REDIS_PORT: $REDIS_PORT"
                 }
             }
         }
@@ -84,13 +75,16 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "🔍 현재 REDIS_HOST 값: $REDIS_HOST"
+                    echo "🔍 현재 REDIS_PORT 값: $REDIS_PORT"
+
                     docker build -t $IMAGE_TAG \
                         --build-arg REDIS_HOST=$REDIS_HOST \
                         --build-arg REDIS_PORT=$REDIS_PORT \
-                        --build-arg EUREKA_URL=$EUREKA_URL \
                         --build-arg MYSQL_URL=$MYSQL_URL \
                         --build-arg MYSQL_USER=$MYSQL_USER \
                         --build-arg MYSQL_PASSWORD=$MYSQL_PASSWORD \
+                        --build-arg EUREKA_URL=$EUREKA_URL \
                         board-service/
 
                     # 기존 컨테이너 종료 후 삭제
@@ -101,10 +95,10 @@ pipeline {
                     docker run -d --name $SERVICE_NAME \
                         -e REDIS_HOST=$REDIS_HOST \
                         -e REDIS_PORT=$REDIS_PORT \
-                        -e EUREKA_URL=$EUREKA_URL \
                         -e MYSQL_URL=$MYSQL_URL \
                         -e MYSQL_USER=$MYSQL_USER \
                         -e MYSQL_PASSWORD=$MYSQL_PASSWORD \
+                        -e EUREKA_URL=$EUREKA_URL \
                         -p $LOCAL_PORT:8084 $IMAGE_TAG
                     '''
                 }

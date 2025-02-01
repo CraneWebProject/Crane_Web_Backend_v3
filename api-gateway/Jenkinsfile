@@ -3,31 +3,21 @@ pipeline {
 
     environment {
         SERVICE_NAME = 'api-gateway'
-        IMAGE_TAG = "api-gateway:latest" // 로컬 이미지 태그
-        LOCAL_PORT = "8080" // 실행할 포트
+        IMAGE_TAG = "api-gateway:latest"
+        LOCAL_PORT = "8080"
+        // ✅ 환경 변수 설정
+        JWT_KEY = credentials('JWT_KEY')
+        REDIS_URL = credentials('REDIS_HOST')
+        REDIS_PORT = credentials('REDIS_PORT')
     }
 
     stages {
-        stage('Prepare Config') {
+        stage('Check Environment Variables') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'REDIS_HOST', variable: 'REDIS_HOST'),
-                    string(credentialsId: 'REDIS_PORT', variable: 'REDIS_PORT'),
-                    string(credentialsId: 'JWT_KEY', variable: 'JWT_KEY'),
-                    string(credentialsId: 'EUREKA_URL', variable: 'EUREKA_URL'),
-                ]) {
-                    script {
-                        echo "Preparing configuration values..."
-                        echo "REDIS_HOST: ${REDIS_HOST}"
-                        echo "REDIS_PORT: ${REDIS_PORT}"
-
-                        // 필수 환경 변수 확인
-                        if (!REDIS_HOST || !REDIS_PORT || !JWT_KEY) {
-                            error("Redis 또는 JWT 설정이 누락되었습니다.")
-                        }
-
-                        echo "✅ 환경 변수 확인 완료."
-                    }
+                script {
+                    echo "✅ Jenkins 환경 변수 확인..."
+                    echo "🔍 REDIS_HOST: $REDIS_HOST"
+                    echo "🔍 REDIS_PORT: $REDIS_PORT"
                 }
             }
         }
@@ -82,11 +72,13 @@ pipeline {
             steps {
                 script {
                     sh '''
+                    echo "🔍 현재 REDIS_HOST 값: $REDIS_HOST"
+                    echo "🔍 현재 REDIS_PORT 값: $REDIS_PORT"
+
                     docker build -t $IMAGE_TAG \
+                        --build-arg JWT_KEY=$JWT_KEY \
                         --build-arg REDIS_HOST=$REDIS_HOST \
                         --build-arg REDIS_PORT=$REDIS_PORT \
-                        --build-arg JWT_KEY=$JWT_KEY \
-                        --build-arg EUREKA_URL=$EUREKA_URL \
                         api-gateway/
 
                     # 기존 컨테이너 종료 후 삭제
@@ -95,10 +87,9 @@ pipeline {
 
                     # 새 컨테이너 실행
                     docker run -d --name $SERVICE_NAME \
+                        -e JWT_KEY=$JWT_KEY \
                         -e REDIS_HOST=$REDIS_HOST \
                         -e REDIS_PORT=$REDIS_PORT \
-                        -e JWT_KEY=$JWT_KEY \
-                        -e EUREKA_URL=$EUREKA_URL \
                         -p $LOCAL_PORT:8080 $IMAGE_TAG
                     '''
                 }
