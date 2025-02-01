@@ -106,6 +106,7 @@ pipeline {
                         -e EUREKA_URL=$EUREKA_URL \
                         -e PATH_FCM_SERVICEACCOUNT=$PATH_FCM_SERVICEACCOUNT \
                         -e KAFKA_URL=$KAFKA_URL \
+                        -v /volume1/docker/FCM:/var/lib/FCM
                         -p $LOCAL_PORT:8085 $IMAGE_TAG
                     '''
                 }
