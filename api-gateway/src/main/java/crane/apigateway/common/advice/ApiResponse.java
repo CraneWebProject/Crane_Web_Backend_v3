@@ -48,6 +48,7 @@ public class ApiResponse<T> {
                 .build();
     }
 
+    //에러 처리
     public static <T> ApiResponse<T> error(String status, String message) {
         return error(status, message, null);
     }
