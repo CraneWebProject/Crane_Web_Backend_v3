@@ -15,7 +15,7 @@ pipeline {
                     string(credentialsId: 'REDIS_PORT', variable: 'REDIS_PORT'),
                     string(credentialsId: 'EUREKA_URL', variable: 'EUREKA_URL'),
                     string(credentialsId: 'MYSQL_URL', variable: 'MYSQL_URL'),
-                    string(credentialsId: 'MYSQL_USER' variable: 'MYSQL_USER'),
+                    string(credentialsId: 'MYSQL_USER', variable: 'MYSQL_USER'),
                     string(credentialsId: 'MYSQL_PASSWORD', variable: 'MYSQL_PASSWORD')
                 ]) {
                     script {
