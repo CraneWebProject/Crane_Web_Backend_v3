@@ -9,6 +9,7 @@ pipeline {
         JWT_KEY = credentials('JWT_KEY')
         REDIS_HOST = credentials('REDIS_HOST')
         REDIS_PORT = credentials('REDIS_PORT')
+        EUREKA_URL = credentials('EUREKA_URL')
     }
 
     stages {
@@ -79,6 +80,7 @@ pipeline {
                         --build-arg JWT_KEY=$JWT_KEY \
                         --build-arg REDIS_HOST=$REDIS_HOST \
                         --build-arg REDIS_PORT=$REDIS_PORT \
+                        --build-arg EUREKA_URL=$EUREKA_URL \
                         api-gateway/
 
                     # 기존 컨테이너 종료 후 삭제
@@ -90,6 +92,7 @@ pipeline {
                         -e JWT_KEY=$JWT_KEY \
                         -e REDIS_HOST=$REDIS_HOST \
                         -e REDIS_PORT=$REDIS_PORT \
+                        -e EUREKA_URL=$EUREKA_URL \
                         -p $LOCAL_PORT:8080 $IMAGE_TAG
                     '''
                 }
