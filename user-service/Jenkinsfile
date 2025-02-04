@@ -6,6 +6,7 @@ pipeline {
         IMAGE_TAG = "user-service:latest"
         LOCAL_PORT = "8081"
         // ✅ 환경 변수 설정
+        TZ = "Asia/Seoul"
         JWT_KEY = credentials('JWT_KEY')
         REDIS_HOST = credentials('REDIS_HOST')
         REDIS_PORT = credentials('REDIS_PORT')

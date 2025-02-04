@@ -6,6 +6,7 @@ pipeline {
         IMAGE_TAG = "eureka-server:latest"
         LOCAL_PORT = "8761"
         EUREKA_URL = credentials('EUREKA_URL') // ✅ 환경 변수 설정
+        TZ = "Asia/Seoul"
     }
 
     stages {

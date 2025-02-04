@@ -6,6 +6,7 @@ pipeline {
         IMAGE_TAG = "team-service:latest"
         LOCAL_PORT = "8082"
         // ✅ 환경 변수 설정
+        TZ = "Asia/Seoul"
         REDIS_HOST = credentials('REDIS_HOST')
         REDIS_PORT = credentials('REDIS_PORT')
         MYSQL_URL = credentials('MYSQL_URL')
