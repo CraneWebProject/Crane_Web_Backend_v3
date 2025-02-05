@@ -6,14 +6,37 @@ pipeline {
         IMAGE_TAG = "api-gateway:latest"
         LOCAL_PORT = "8080"
         // ✅ 환경 변수 설정
-        TZ = "Asia/Seoul"
         JWT_KEY = credentials('JWT_KEY')
         REDIS_HOST = credentials('REDIS_HOST')
         REDIS_PORT = credentials('REDIS_PORT')
         EUREKA_URL = credentials('EUREKA_URL')
+
+        TZ = "Asia/Seoul"
+        SLACK_CHANNEL = "build-deploy"
+        SLACK_SUCCESS_COLOR = "#2C953C"
+        SLACK_FAIL_COLOR = "#FF3232"
+        SLACK_MESSAGE_UNIT = "=================================================="
+        SLACK_DURATION_TIME_MESSAGE = ""
+        SLACK_MESSAGE_BUILDER = ""
     }
 
     stages {
+        stage('Start'){
+            steps{
+                script{
+                    SLACK_MESSAGE_BUILDER =
+                        "${SLACK_MESSAGE_UNIT}" + "\n" +
+                        "@here \n" +
+                        ":pencil: `${env.JOB_NAME}` 배포 파이프라인 실행 결과 리포트입니다. (<${env.BUILD_URL}|${currentBuild.displayName}>) \n"
+                    slackSend (
+                        channel: SLACK_CHANNEL,
+                        color: SLACK_SUCCESS_COLOR,
+                        message: ":information_source: @here `${env.JOB_NAME}` 배포 파이프라인이 시작되었습니다. (<${env.BUILD_URL}|${currentBuild.displayName}>)"
+                    )
+                }
+            }
+        }
+
         stage('Check Environment Variables') {
             steps {
                 script {
@@ -49,16 +72,32 @@ pipeline {
                     echo "✅ 현재 빌드하는 커밋: ${gitCommit}"
                 }
             }
+            post {
+                failure {
+                    slackSend (
+                        channel: SLACK_CHANNEL,
+                        color: SLACK_FAIL_COLOR,
+                        message: "${SLACK_MESSAGE_BUILDER}" + stageFailSlackMessage("Git Checkout") + "${SLACK_MESSAGE_UNIT}"
+                    )
+                }
+            }
         }
 
         stage('Build') {
             steps {
-                dir('api-gateway') {
-                    sh '''
-                        chmod +x gradlew
-                        ./gradlew clean build -x test
-                    '''
+                script{
+                    long startTime = new Date().getTime()
+                    dir('api-gateway') {
+                        sh '''
+                            chmod +x gradlew
+                            ./gradlew clean build -x test
+                        '''
+                    }
+                    long endTime = new Date().getTime()
+                    SLACK_DURATION_TIME_MESSAGE = getStageDurationMessage(startTime, endTime)
+                    SLACK_MESSAGE_BUILDER += ":white_check_mark: Build 성공! (${SLACK_DURATION_TIME_MESSAGE}) \n"
                 }
+
             }
             post {
                 success {
@@ -66,6 +105,11 @@ pipeline {
                 }
                 failure {
                     error "❌ Build 단계 실패"
+                    slackSend (
+                        channel: SLACK_CHANNEL,
+                        color: SLACK_FAIL_COLOR,
+                        message: "${SLACK_MESSAGE_BUILDER}" + stageFailSlackMessage("Build") + "${SLACK_MESSAGE_UNIT}"
+                    )
                 }
             }
         }
@@ -73,11 +117,14 @@ pipeline {
         stage('Docker Build & Run') {
             steps {
                 script {
+                    long startTime = new Date().getTime()
+
                     sh '''
                     echo "🔍 현재 REDIS_HOST 값: $REDIS_HOST"
                     echo "🔍 현재 REDIS_PORT 값: $REDIS_PORT"
 
                     docker build -t $IMAGE_TAG \
+                        --build-arg TZ=$TZ \
                         --build-arg JWT_KEY=$JWT_KEY \
                         --build-arg REDIS_HOST=$REDIS_HOST \
                         --build-arg REDIS_PORT=$REDIS_PORT \
@@ -90,12 +137,18 @@ pipeline {
 
                     # 새 컨테이너 실행
                     docker run -d --name $SERVICE_NAME \
+                        -e TZ=$TZ \
                         -e JWT_KEY=$JWT_KEY \
                         -e REDIS_HOST=$REDIS_HOST \
                         -e REDIS_PORT=$REDIS_PORT \
                         -e EUREKA_URL=$EUREKA_URL \
                         -p $LOCAL_PORT:8080 $IMAGE_TAG
                     '''
+
+                     long endTime = new Date().getTime()
+                    SLACK_DURATION_TIME_MESSAGE = getStageDurationMessage(startTime, endTime)
+                    SLACK_MESSAGE_BUILDER += ":white_check_mark: Deploy 성공 (${SLACK_DURATION_TIME_MESSAGE}) \n"
+                    SLACK_MESSAGE_BUILDER += ":tada: `${env.JOB_NAME}` 배포 파이프라인이 성공적으로 완료되었습니다. :beer:\n" + "${env.SLACK_MESSAGE_UNIT}"
                 }
             }
         }
@@ -111,6 +164,12 @@ pipeline {
             Port: ${LOCAL_PORT}
             ===========================================
             """
+
+            slackSend (
+                channel: SLACK_CHANNEL,
+                color: SLACK_SUCCESS_COLOR,
+                message: SLACK_MESSAGE_BUILDER
+            )
         }
         failure {
             echo """
@@ -120,9 +179,38 @@ pipeline {
             Stage: ${currentBuild.result}
             ===========================================
             """
+
+            slackSend (
+                channel: SLACK_CHANNEL,
+                color: SLACK_FAIL_COLOR,
+                message: "${SLACK_MESSAGE_BUILDER}" + stageFailSlackMessage("Deploy") + "${SLACK_MESSAGE_UNIT}"
+            )
         }
         always {
             cleanWs()
         }
     }
+}
+
+
+// Stage 경과 시간을 계산하여 메시지를 생성하는 함수
+def getStageDurationMessage(long startTime, long endTime) {
+    long durationMillis = endTime - startTime
+
+    long durationSeconds = (long) (durationMillis / 1000) % 60
+    long durationMinutes = (long) (durationMillis / (1000 * 60)) % 60
+
+    def durationMessage = ""
+    if (durationMinutes > 0) {
+        durationMessage += "${durationMinutes}분 "
+    }
+    durationMessage += "${durationSeconds}초"
+
+    return durationMessage
+}
+
+
+// 슬랙 실패 메세지를 생성하는 함수
+def stageFailSlackMessage(stageName) {
+    return ":alert: ${stageName} 단계에서 배포가 실패하였습니다. \n"
 }
