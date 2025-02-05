@@ -6,7 +6,6 @@ pipeline {
         IMAGE_TAG = "user-service:latest"
         LOCAL_PORT = "8081"
         // ✅ 환경 변수 설정
-        TZ = "Asia/Seoul"
         JWT_KEY = credentials('JWT_KEY')
         REDIS_HOST = credentials('REDIS_HOST')
         REDIS_PORT = credentials('REDIS_PORT')
@@ -15,6 +14,7 @@ pipeline {
         MYSQL_PASSWORD = credentials('MYSQL_PASSWORD')
         EUREKA_URL = credentials('EUREKA_URL')
 
+        TZ = "Asia/Seoul"
         SLACK_CHANNEL = "build-deploy"
         SLACK_SUCCESS_COLOR = "#2C953C"
         SLACK_FAIL_COLOR = "#FF3232"
@@ -89,7 +89,7 @@ pipeline {
         stage('Build') {
             steps {
                 script{
-                    long startTime = new Date().getTime() // ✅ script 블록 내에서만 사용
+                    long startTime = new Date().getTime()
                     dir('user-service') {
                         sh '''
                             chmod +x gradlew
@@ -103,9 +103,12 @@ pipeline {
 
             }
             post {
+                success {
+                    echo "✅ Build 단계 완료"
+                }
                 failure {
                     error "❌ Build 단계 실패"
-                     slackSend (
+                    slackSend (
                         channel: SLACK_CHANNEL,
                         color: SLACK_FAIL_COLOR,
                         message: "${SLACK_MESSAGE_BUILDER}" + stageFailSlackMessage("Build") + "${SLACK_MESSAGE_UNIT}"
@@ -220,5 +223,5 @@ def getStageDurationMessage(long startTime, long endTime) {
 
 // 슬랙 실패 메세지를 생성하는 함수
 def stageFailSlackMessage(stageName) {
-    return ":alert : ${stageName} 단계에서 배포가 실패하였습니다. \n"
+    return ":alert: ${stageName} 단계에서 배포가 실패하였습니다. \n"
 }
