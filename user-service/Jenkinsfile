@@ -89,19 +89,18 @@ pipeline {
         stage('Build') {
             steps {
                 script{
-                    long startTime = new Date().getTime()
-                }
-                dir('user-service') {
-                    sh '''
-                        chmod +x gradlew
-                        ./gradlew clean build -x test
-                    '''
-                }
-                script{
+                    long startTime = new Date().getTime() // ✅ script 블록 내에서만 사용
+                    dir('user-service') {
+                        sh '''
+                            chmod +x gradlew
+                            ./gradlew clean build -x test
+                        '''
+                    }
                     long endTime = new Date().getTime()
                     SLACK_DURATION_TIME_MESSAGE = getStageDurationMessage(startTime, endTime)
                     SLACK_MESSAGE_BUILDER += ":white_check_mark: Build 성공! (${SLACK_DURATION_TIME_MESSAGE}) \n"
                 }
+
             }
             post {
                 failure {
@@ -221,5 +220,5 @@ def getStageDurationMessage(long startTime, long endTime) {
 
 // 슬랙 실패 메세지를 생성하는 함수
 def stageFailSlackMessage(stageName) {
-    return ":alert: ${stageName} 단계에서 배포가 실패하였습니다. \n"
+    return ":alert : ${stageName} 단계에서 배포가 실패하였습니다. \n"
 }
