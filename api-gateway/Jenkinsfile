@@ -142,7 +142,7 @@ pipeline {
                     # 새 컨테이너 실행
                     docker run -d --name $SERVICE_NAME \
                         -v /volume1/docker/cert:/var/lib/cert \
-                        -p $LOCAL_PORT:8080
+                        -p $LOCAL_PORT:8080 \
                         -e TZ=$TZ \
                         -e JWT_KEY=$JWT_KEY \
                         -e REDIS_HOST=$REDIS_HOST \
@@ -153,7 +153,7 @@ pipeline {
                         $IMAGE_TAG
                     '''
 
-                     long endTime = new Date().getTime()
+                    long endTime = new Date().getTime()
                     SLACK_DURATION_TIME_MESSAGE = getStageDurationMessage(startTime, endTime)
                     SLACK_MESSAGE_BUILDER += ":white_check_mark: Deploy 성공 (${SLACK_DURATION_TIME_MESSAGE}) \n"
                     SLACK_MESSAGE_BUILDER += ":tada: `${env.JOB_NAME}` 배포 파이프라인이 성공적으로 완료되었습니다. :beer:\n" + "${env.SLACK_MESSAGE_UNIT}"
