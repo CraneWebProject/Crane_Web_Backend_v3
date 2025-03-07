@@ -38,6 +38,7 @@ public class SecurityConfig {
                             return exchange.getResponse().setComplete();
                         }))
                 .authorizeExchange(exchanges -> exchanges
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll() // OPTIONS 메서드 허용 추가
                         .pathMatchers("/api/v1/users", "/api/v1/users/login").permitAll()  // 인증 예외 경로 설정
                         .anyExchange().authenticated())  // 나머지는 인증 필요
                 .build();
@@ -46,7 +47,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList("https://localhost:5173", "https://crane-web-frontend-v2.vercel.app/", "https://schcrane.site")); // 프론트엔드 URL을 정확히 지정
+        config.setAllowedOrigins(Arrays.asList("https://localhost:5173", "https://crane-web-frontend-v2.vercel.app", "https://schcrane.site", "https://www.schcrane.site")); // 프론트엔드 URL을 정확히 지정
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setExposedHeaders(Arrays.asList("Authorization"));
