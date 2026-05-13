@@ -1,4 +1,4 @@
-# Crane Web Backend v3 (🚧작성중🚧)
+# Crane Web Backend v3
 
 > 크레인 웹 서비스의 백엔드 시스템 — MSA(마이크로서비스 아키텍처) 기반 v3
 
@@ -51,8 +51,8 @@
 
 | 이름 | 역할 | GitHub |
 |------|------|--------|
-| [명혜성] | [기획, 백엔드(예약, 회원 등 기능), 프론트엔드 전체] | [@Hyeseong-Myeong](https://github.com/Hyeseong-Myeong) |
-| [송예림] | [백엔드(알림, 게시판 등 기능)] | [@Yearm404](https://github.com/YerimSong404) |
+| 명혜성 | 기획, 백엔드(예약, 회원 등 기능), 프론트엔드 전체 | [@Hyeseong-Myeong](https://github.com/Hyeseong-Myeong) |
+| 송예림 | 백엔드(알림, 게시판 등 기능) | [@Yearm404](https://github.com/YerimSong404) |
 
 ---
 
@@ -298,9 +298,8 @@ cd api-gateway && ../gradlew bootRun
 ## 8. API 명세
 
 
-```
-API 문서: 
-```
+API 문서: [https://docs.google.com/spreadsheets/d/1WuNa686kZHJU7AwaPtOPIfbmVdhjwxsyIvBdn9gxMmw/edit?usp=sharing](https://docs.google.com/spreadsheets/d/1WuNa686kZHJU7AwaPtOPIfbmVdhjwxsyIvBdn9gxMmw/edit?usp=sharing)
+
 
 주요 엔드포인트 요약:
 
