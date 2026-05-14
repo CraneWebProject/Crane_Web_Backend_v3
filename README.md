@@ -1,4 +1,4 @@
-# Crane Web Backend v3
+# Crane Web Backend v3(🚧작성중🚧)
 
 > 크레인 웹 서비스의 백엔드 시스템 — MSA(마이크로서비스 아키텍처) 기반 v3
 
@@ -32,6 +32,7 @@
 > 밴드동아리([CRANE](https://www.instagram.com/crane__sch/)) 내부적으로 반복 수기 작업하던 예약 과정을 자동화하여, 웹 사이트를 제작한 서비스.
 
 - BE 2인, FE 1인이 진행 (2024.06 ~ 2025.01, 2026년 2월까지 약 18개월 운영)
+  - **Frontend Repository:** [Crane_Web_Frontend_v2](https://github.com/CraneWebProject/Crane_Web_Frontend_v2)
 - 18개월간 사용자 약 190명, 예약 약 1,700건
 - 멘토링을 위한 장비·공간 예약, 합주를 위한 공간 예약, 동아리 활동 기록을 위한 게시판, 팀 관리 기능 구현
 
@@ -87,63 +88,20 @@
 | API Gateway | Spring Cloud Gateway |
 | Container | Docker, Docker Compose |
 
+### CI/CD & Automation
+| 분류 | 기술 |
+|------|------|
+| CI/CD Pipeline | Jenkins |
+| Notification | Slack Webhook (배포 상태 알림) |
+
+> **배포 워크플로우**: 각 마이크로서비스별 독립적인 `Jenkinsfile`을 구성하여, 모노레포 환경에서도 변경이 감지된 특정 서비스만 선택적으로 빌드합니다. 빌드 후 Docker 이미지를 생성하여 기존 컨테이너를 교체(재배포)하며, 시작부터 성공/실패까지의 모든 과정과 소요 시간을 Slack으로 실시간 자동 전송합니다.
+
 ---
 
 ## 4. 아키텍처 다이어그램
 
-```mermaid
-flowchart TB
-    Client(["👤 Client"])
+<img width="60%" alt="백엔드 구조도(W_BG)" src="https://github.com/user-attachments/assets/da3ea9ff-146b-49fd-ba19-6e2a11e20921" />
 
-    GW["🔀 API Gateway (:8080)"]
-
-    subgraph CORE ["Core Microservices"]
-        US["👤 user-service"]
-        TS["👥 team-service"]
-        BS["📋 board-service"]
-        RS["📅 reservation-service"]
-    end
-
-    subgraph WORKERS ["Event Workers"]
-        NS["🔔 notification-service"]
-        BAT["⚙️ batch-service"]
-    end
-
-    subgraph MSG ["Message Broker"]
-        KAFKA["Apache Kafka Cluster\n(3 Brokers, ZK, UI)"]
-    end
-
-    subgraph DATA ["Data & Discovery"]
-        EUR["🗂️ Eureka Server"]
-        MYSQL["🐬 MySQL"]
-        REDIS["🔴 Redis"]
-    end
-
-    Client --> GW
-    GW -->|"라우팅"| US & TS & BS & RS & NS
-
-    US & RS -->|"이벤트 발행"| KAFKA
-    KAFKA -->|"이벤트 구독"| NS & BAT
-
-    %% 점선을 사용하여 시각적 복잡도 감소
-    US & TS & BS & RS & BAT -.->|"데이터 R/W"| MYSQL
-    US -.->|"토큰 관리"| REDIS
-    
-    GW & US & TS & BS & RS & NS & BAT -.->|"서비스 등록/조회"| EUR
-
-    %% 깔끔한 디자인을 위한 스타일링
-    classDef gateway fill:#e1f5fe,stroke:#03a9f4,stroke-width:2px;
-    classDef core fill:#fff3e0,stroke:#ff9800,stroke-width:2px;
-    classDef worker fill:#f3e5f5,stroke:#9c27b0,stroke-width:2px;
-    classDef msg fill:#ffebee,stroke:#f44336,stroke-width:2px;
-    classDef data fill:#e8f5e9,stroke:#4caf50,stroke-width:2px;
-    
-    class GW gateway;
-    class US,TS,BS,RS core;
-    class NS,BAT worker;
-    class KAFKA msg;
-    class EUR,MYSQL,REDIS data;
-```
 
 ---
 
@@ -321,7 +279,7 @@ API 문서: [https://docs.google.com/spreadsheets/d/1WuNa686kZHJU7AwaPtOPIfbmVdh
 Copyright (c) 2024 CraneWebProject
 ```
 
-본 프로젝트는 **MIT License** 하에 배포됩니다. 자세한 내용은 [LICENSE](./LICENSE) 파일을 참고하세요.
+본 프로젝트는 **MIT License** 하에 배포됩니다.
 
 ---
 
@@ -356,9 +314,6 @@ Copyright (c) 2024 CraneWebProject
 
 **Q. `HOST_IP` 환경 변수는 왜 필요한가요?**
 > Kafka 브로커가 외부(컨테이너 밖)에서 접근 가능하도록 `EXTERNAL` 리스너에 실제 호스트 IP를 명시해야 합니다. 로컬 환경에서는 `127.0.0.1`로 설정하면 됩니다.
-
-**Q. 각 서비스마다 DB를 따로 만들어야 하나요?**
-> MSA 원칙상 서비스별 독립 DB를 권장합니다. 현재 구성은 MySQL을 사용하며, 서비스별 스키마(데이터베이스)를 분리하는 방식을 사용합니다. 각 서비스의 `application.yml`에서 데이터소스를 확인하세요.
 
 **Q. Kafka UI는 어떻게 접근하나요?**
 > `docker-compose up` 실행 후 브라우저에서 `http://localhost:8989`로 접근할 수 있습니다. 토픽 생성, 메시지 모니터링 등을 GUI로 확인할 수 있습니다.
