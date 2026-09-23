@@ -15,6 +15,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     List<Reservation> findByTime(LocalDateTime time);
 
+    boolean existsByInstrumentAndTime(Instrument instrument, LocalDateTime time);
+
     @Query("SELECT r FROM Reservation r WHERE r.userId = :userId")
     List<Reservation> findByUserId(@Param("userId") Long userId);
 

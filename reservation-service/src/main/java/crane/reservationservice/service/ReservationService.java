@@ -13,23 +13,32 @@ import crane.reservationservice.kafka.ReservationEventProducer;
 import crane.reservationservice.repository.InstrumentRepository;
 import crane.reservationservice.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ReservationService {
 
+    // 예약 슬롯 일괄 생성 시 한 트랜잭션에 저장할 건수
+    private static final int CHUNK_SIZE = 100;
+
     private final ReservationRepository reservationRepository;
     private final InstrumentRepository instrumentRepository;
     private final UserClient userClient;
+    private final TransactionTemplate transactionTemplate;
 
     private final ReservationEventProducer reservationEventProducer;
 
@@ -41,51 +50,58 @@ public class ReservationService {
     //낮 12시에 다음주 장비 신청 open
 
     //초기 예약 생성
-    //서버 실행 시 오늘부터 1주일간의 예약을 모두 생성함.
-    //예약이 없는경우 실행되도록 할 것.
-    @Transactional
+    //서버 실행 시 오늘부터 1주일간의 예약을 열린 상태로 생성함.
+    //이미 있는 슬롯은 건너뛰므로 여러 번 실행해도 중복 생성되지 않음.
+    @Transactional(propagation = Propagation.NOT_SUPPORTED) // 청크마다 별도 트랜잭션을 쓰기 위해 클래스의 readOnly 트랜잭션에 합류하지 않음
     public void initReservation(){
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startOfDay;
-        LocalDateTime endOfDay;
-        List<Reservation> reservationList;
-
         for(int i = 0; i < 8; i++){
-            startOfDay = now.plusDays(i).withHour(0).withMinute(0).withSecond(0); // now 기준 계산
-            endOfDay = now.plusDays(i).withHour(23).withMinute(59).withSecond(59); // now 기준 계산
-
-            reservationList = reservationRepository.findAllByDate(startOfDay, endOfDay);
-
-            if(reservationList.isEmpty()){
-                createReservationAfterNDays(i);
-                openEnsembleAfterNDays(i);
-                openInstAfterNDays(i);
-            }
+            createSlots(i, true);
         }
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void createReservationAfterNDays(int n){
-        LocalDateTime reservationDate = LocalDateTime.now().plusDays(n).withHour(0).withMinute(0).withSecond(0);
+        createSlots(n, false);
+    }
+
+    // 제로 오프셋: 슬롯 시각을 대상 날짜 00:00:00.000 기준으로 계산해, 몇 번 실행해도 같은 슬롯은 같은 (장비, 시각) 키를 갖게 한다.
+    // No-Offset 페이징처럼 실행 시각·순번이 아니라 키 값으로 슬롯을 식별하므로, 재실행 시 이미 있는 슬롯을 건너뛸 수 있다.
+    // CHUNK_SIZE 건마다 별도 트랜잭션으로 저장해, 한 청크가 실패해도 앞선 청크는 커밋된 상태로 남는다.
+    // ponytail: 슬롯마다 exists 조회 1회. 규모가 커지면 청크 단위 일괄 조회로 바꿀 것.
+    // ponytail: 부분 실패 후 재실행으로 뒤늦게 생성된 열린 슬롯은 같은 시각의 기존 합주/장비 예약에 의한 차단을 반영하지 않음.
+    private void createSlots(int n, boolean possible){
+        LocalDateTime reservationDate = LocalDate.now().plusDays(n).atStartOfDay();
+        List<Instrument> instruments = instrumentRepository.findAll();
 
         //24시간동안 30분 단위로 예약 생성
+        List<Reservation> slots = new ArrayList<>();
         for(int hour = 8; hour < 24; hour++){
             for(int minute = 0; minute < 60; minute += 30){
                 LocalDateTime time = reservationDate.plusHours(hour).plusMinutes(minute);
 
-                List <Instrument> instruments = instrumentRepository.findAll();
-
                 for(Instrument instrument : instruments){
-                    Reservation reservation = Reservation.builder()
+                    slots.add(Reservation.builder()
                             .userId(null)
                             .status(Status.PENDING)
-                            .possible(false)
+                            .possible(possible)
                             .instrument(instrument)
                             .time(time)
-                            .build();
-
-                    reservationRepository.save(reservation);
+                            .build());
                 }
+            }
+        }
+
+        for(int from = 0; from < slots.size(); from += CHUNK_SIZE){
+            List<Reservation> chunk = slots.subList(from, Math.min(from + CHUNK_SIZE, slots.size()));
+            try {
+                transactionTemplate.executeWithoutResult(status -> chunk.stream()
+                        .filter(r -> !reservationRepository.existsByInstrumentAndTime(r.getInstrument(), r.getTime()))
+                        .forEach(reservationRepository::save));
+            } catch (RuntimeException e) {
+                // 이 청크만 롤백됨. 같은 날짜로 다시 실행하면 남은 슬롯만 생성된다.
+                log.error("예약 슬롯 청크 저장 실패 - date: {}, chunk: {}~{}",
+                        reservationDate.toLocalDate(), from, from + chunk.size() - 1, e);
+                throw e;
             }
         }
     }
