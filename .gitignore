@@ -219,3 +219,6 @@ gradle-app.setting
 /src/main/generated/
 
 elk/elasticsearch/**
+
+# 작업 계획·검토 문서 (로컬 확인용)
+docs/
