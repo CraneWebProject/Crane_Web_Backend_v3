@@ -1,5 +1,6 @@
 package crane.notificationservice.common.config;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.ExponentialBackOff;
+import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -56,8 +58,11 @@ public class KafkaConsumerConfig {
 
         factory.setConsumerFactory(consumerFactory());
 
-        // MANUAL 확인 모드 설정
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
+        // MANUAL_IMMEDIATE: DLT 로 넘긴 레코드의 offset 을 즉시 커밋하기 위함 (commitRecovered 는 이 모드에서만 동작)
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+
+        ExponentialBackOff backOff = new ExponentialBackOff(1000L, 2.0);  // 1초부터 시작해서 2배씩 증가
+        backOff.setMaxAttempts(3); // 3회 재시도(1s, 2s, 4s) 후 DLT
 
         // 에러 핸들러 설정
         DefaultErrorHandler errorHandler = new DefaultErrorHandler(
@@ -71,13 +76,42 @@ public class KafkaConsumerConfig {
                             );
                         }
                 ),
-                new ExponentialBackOff(1000L, 2.0)  // 1초부터 시작해서 2배씩 증가
+                backOff
         );
+        errorHandler.setCommitRecovered(true);
 
         // 특정 예외는 재시도하지 않고 바로 DLT로
         errorHandler.addNotRetryableExceptions(
                 IllegalArgumentException.class,
-                org.springframework.messaging.converter.MessageConversionException.class
+                org.springframework.messaging.converter.MessageConversionException.class,
+                JsonProcessingException.class
+        );
+
+        factory.setCommonErrorHandler(errorHandler);
+
+        return factory;
+    }
+
+    // DLT 재처리용: 1분 간격 3회 재시도, 최종 실패는 로그만 남기고 넘긴다.
+    // 메시지는 DLT 토픽 보존 기간 동안 남아 있어 kafka-ui 로 조회·재발행할 수 있다.
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> dltKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, String> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+
+        factory.setConsumerFactory(consumerFactory());
+        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL_IMMEDIATE);
+
+        DefaultErrorHandler errorHandler = new DefaultErrorHandler(
+                (record, ex) -> log.error("DLT 재처리 최종 실패 - topic: {}, offset: {}, exception: {}",
+                        record.topic(), record.offset(), ex.getMessage()),
+                new FixedBackOff(60_000L, 3L)
+        );
+        errorHandler.setCommitRecovered(true);
+        errorHandler.addNotRetryableExceptions(
+                IllegalArgumentException.class,
+                org.springframework.messaging.converter.MessageConversionException.class,
+                JsonProcessingException.class
         );
 
         factory.setCommonErrorHandler(errorHandler);
