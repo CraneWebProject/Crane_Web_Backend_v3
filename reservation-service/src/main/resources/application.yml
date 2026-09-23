@@ -33,6 +33,17 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 
+  # 동기 호출이 매달리지 않도록 타임아웃을 두고, 연속 실패 시 서킷브레이커로 차단한다.
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 2000
+            read-timeout: 5000
+      circuitbreaker:
+        enabled: true
+
 eureka:
   client:
     service-url:
@@ -41,3 +52,14 @@ eureka:
     instance-id: ${spring.application.name}:${server.port}
     prefer-ip-address: true
 
+resilience4j:
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 6s # Feign read-timeout(5s) 보다 길게 잡아 타임아웃이 두 번 걸리지 않게 한다
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 20
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
