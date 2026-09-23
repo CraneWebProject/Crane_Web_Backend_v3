@@ -1,21 +1,7 @@
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 
-# 환경변수 정의
-ARG REDIS_HOST
-ARG REDIS_PORT
-ARG EUREKA_URL
-ARG MYSQL_URL
-ARG MYSQL_USER
-ARG MYSQL_PASSWORD
-
-# 환경변수 설정
-ENV REDIS_HOST=${REDIS_HOST}
-ENV REDIS_PORT=${REDIS_PORT}
-ENV EUREKA_URL=${EUREKA_URL}
-ENV MYSQL_URL=${MYSQL_URL}
-ENV MYSQL_USER=${MYSQL_USER}
-ENV MYSQL_PASSWORD=${MYSQL_PASSWORD}
+# 환경변수(비밀값 포함)는 이미지에 넣지 않고 실행 시점에 주입한다 (Jenkins → docker run -e)
 
 COPY build/libs/team-service-0.0.1-SNAPSHOT.jar app.jar
 

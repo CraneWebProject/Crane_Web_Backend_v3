@@ -46,10 +46,10 @@ spring:
         - id: board-service
           uri: lb://board-service
           predicates:
-            - Path=/api/v1/boards/**, /api/v1/reply/**
+            - Path=/api/v1/boards/**, /api/v1/replys/**
           filters:
             - RewritePath=/api/v1/boards/(?<segment>.*), /api/v1/boards/${segment}
-            - RewritePath=/api/v1/reply/(?<segment>.*), /api/v1/reply/${segment}
+            - RewritePath=/api/v1/replys/(?<segment>.*), /api/v1/replys/${segment}
 
         - id: notification-service
           uri: lb://notification-service

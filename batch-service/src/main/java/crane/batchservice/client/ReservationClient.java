@@ -2,6 +2,7 @@ package crane.batchservice.client;
 
 import crane.batchservice.common.advice.ApiResponse;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 
@@ -19,5 +20,8 @@ public interface ReservationClient {
 
     @GetMapping("/api/v1/reservations/open-inst")
     ApiResponse<Void> openInstReservation();
+
+    @DeleteMapping("/api/v1/reservations/expired")
+    ApiResponse<Void> deleteExpiredReservation();
 
 }

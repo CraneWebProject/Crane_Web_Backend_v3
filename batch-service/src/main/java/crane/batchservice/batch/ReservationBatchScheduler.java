@@ -2,6 +2,7 @@ package crane.batchservice.batch;
 
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobParameters;
 import org.springframework.batch.core.JobParametersBuilder;
@@ -20,8 +21,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
+@Slf4j
 @RequiredArgsConstructor
 @Configuration
 public class ReservationBatchScheduler {
@@ -32,76 +34,46 @@ public class ReservationBatchScheduler {
     //프로그램 처음 실행 시 한번만 실행
     @EventListener(ApplicationReadyEvent.class)
     public void runInitJob(){
-        String time = LocalDateTime.now().toString();
-
-        try{
-            Job job = jobRegistry.getJob("createReservationJob");
-            JobParametersBuilder jobParam = new JobParametersBuilder().addString("time", time);
-            jobLauncher.run(job, jobParam.toJobParameters());
-        }catch(NoSuchJobException e){
-            throw new RuntimeException("존재하지 않는 Job: " + e.getMessage(), e);
-        }catch( JobInstanceAlreadyCompleteException |
-                JobExecutionAlreadyRunningException |
-                JobParametersInvalidException |
-                JobRestartException e){
-            throw new RuntimeException("배치 작업 실행 중 오류 발생: " + e);
-        }
+        runJob("createReservationJob");
     }
 
 
     @Scheduled(cron = "0 0 23 * * ? ")
     public void runcreateReservationJob(){
-        String time = LocalDateTime.now().toString();
-
-        try{
-            Job job = jobRegistry.getJob("createReservationNextWeekJob");
-            JobParametersBuilder jobParam = new JobParametersBuilder().addString("time", time);
-            jobLauncher.run(job, jobParam.toJobParameters());
-        } catch (NoSuchJobException e) {
-            throw new RuntimeException("존재하지 않는 Job: " + e.getMessage(), e);
-        }catch( JobInstanceAlreadyCompleteException |
-                JobExecutionAlreadyRunningException |
-                JobParametersInvalidException |
-                JobRestartException e ){
-            throw new RuntimeException("작업중 오류 발생  : " + e);
-        }
+        runJob("createReservationNextWeekJob");
     }
 
 
     @Scheduled(cron = "0 0 0 * * ?")
     public void runEnsembleOpenJob()    {
-        String time = LocalDateTime.now().toString();
-
-        try{
-            Job job = jobRegistry.getJob("openNextWeekEnsembleJob");
-            JobParametersBuilder jobParam = new JobParametersBuilder().addString("time", time);
-            jobLauncher.run(job, jobParam.toJobParameters());
-        }catch (NoSuchJobException e ){
-            throw new RuntimeException("존재하지 않는 Job: " + e.getMessage(), e);
-        }catch (JobInstanceAlreadyCompleteException |
-                JobExecutionAlreadyRunningException |
-                JobParametersInvalidException |
-                JobRestartException e){
-            throw new RuntimeException("작업 중 오류 발생  : " + e);
-        }
+        runJob("openNextWeekEnsembleJob");
     }
 
     @Scheduled(cron = "0 0 12 * * ?")
     public void runOpenInstJob(){
-        String time = LocalDateTime.now().toString();
+        runJob("openNextWeekInstJob");
+    }
+
+    @Scheduled(cron = "0 0 4 * * ?")
+    public void runDeleteReservationJob(){
+        runJob("deleteReservationJob");
+    }
+
+    // 제로 오프셋: 실행 시각(now) 대신 실행 날짜(00:00 기준)를 JobParameter 로 써서 같은 날짜의 같은 잡은 같은 JobInstance 가 되게 한다.
+    // 이미 완료됐거나 실행 중인 인스턴스는 Spring Batch 가 거부하므로 로그만 남기고 건너뛴다. FAILED 인스턴스는 같은 날짜로 재실행할 수 있다.
+    private void runJob(String jobName){
+        LocalDate runDate = LocalDate.now();
 
         try{
-            Job job = jobRegistry.getJob("openNextWeekInstJob");
-            JobParametersBuilder jobParametersBuilder = new JobParametersBuilder().addString("time", time);
-            jobLauncher.run(job, jobParametersBuilder.toJobParameters());
-        }catch (NoSuchJobException e){
+            Job job = jobRegistry.getJob(jobName);
+            JobParametersBuilder jobParam = new JobParametersBuilder().addLocalDate("runDate", runDate);
+            jobLauncher.run(job, jobParam.toJobParameters());
+        }catch(JobInstanceAlreadyCompleteException | JobExecutionAlreadyRunningException e){
+            log.info("이미 완료됐거나 실행 중인 배치라 건너뜀 - job: {}, runDate: {}", jobName, runDate);
+        }catch(NoSuchJobException e){
             throw new RuntimeException("존재하지 않는 Job: " + e.getMessage(), e);
-        }catch(JobInstanceAlreadyCompleteException |
-               JobExecutionAlreadyRunningException |
-               JobParametersInvalidException |
-               JobRestartException e)
-        {
-            throw new RuntimeException("작업중 오류 발생 : " + e);
+        }catch(JobParametersInvalidException | JobRestartException e){
+            throw new RuntimeException("배치 작업 실행 중 오류 발생: " + e);
         }
     }
 }

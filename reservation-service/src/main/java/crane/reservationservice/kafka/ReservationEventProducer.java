@@ -23,7 +23,9 @@ public class ReservationEventProducer {
     private void sendEvent(ReservationCompletedEvent reservationCompletedEvent) {
         try{
             String value = objectMapper.writeValueAsString(reservationCompletedEvent);
-            reservationKafkaTemplate.send(topicName, value)
+            // 같은 사용자의 이벤트를 같은 파티션으로 보내 알림 순서(예약 완료 → 취소)를 유지한다.
+            String key = String.valueOf(reservationCompletedEvent.getUserId());
+            reservationKafkaTemplate.send(topicName, key, value)
                     .whenComplete((result, exception) -> {
                         if (exception == null) {
                             log.info("예약 정보 전송성공: {}, 오프셋: {}",

@@ -125,21 +125,18 @@ pipeline {
                     echo "🔍 현재 REDIS_PORT 값: $REDIS_PORT"
 
                     docker build -t $IMAGE_TAG \
-                        --build-arg TZ=$TZ \
-                        --build-arg REDIS_HOST=$REDIS_HOST \
-                        --build-arg REDIS_PORT=$REDIS_PORT \
-                        --build-arg MYSQL_URL=$MYSQL_URL \
-                        --build-arg MYSQL_USER=$MYSQL_USER \
-                        --build-arg MYSQL_PASSWORD=$MYSQL_PASSWORD \
-                        --build-arg EUREKA_URL=$EUREKA_URL \
                         batch-service/
 
+                    # 블루그린 미적용(재생성 방식): 외부 트래픽이 없고, 두 대가 겹치면 스케줄러가 이중 실행됨
                     # 기존 컨테이너 종료 후 삭제
                     docker stop $SERVICE_NAME || true
                     docker rm $SERVICE_NAME || true
 
                     # 새 컨테이너 실행
                     docker run -d --name $SERVICE_NAME \
+                        --restart unless-stopped \
+                        --memory 512m --cpus 1.0 \
+                        -e JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=60.0 \
                         -e TZ=$TZ \
                         -e REDIS_HOST=$REDIS_HOST \
                         -e REDIS_PORT=$REDIS_PORT \
