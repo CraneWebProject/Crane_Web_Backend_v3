@@ -135,4 +135,29 @@ public class ReservationBatchConfig {
         });
     }
 
+
+    //매일 새벽 4시 지난 주의 예약자 없는 예약 삭제
+    @Bean
+    public Job deleteReservationJob(JobRepository jobRepository,
+                                    PlatformTransactionManager transactionManager) throws DuplicateFormatFlagsException {
+        return new JobBuilder("deleteReservationJob", jobRepository)
+                .start(deleteReservationStep(jobRepository, transactionManager))
+                .build();
+    }
+
+    public Step deleteReservationStep(JobRepository jobRepository,
+                                      PlatformTransactionManager transactionManager){
+        return new StepBuilder("deleteReservationStep", jobRepository)
+                .tasklet(deleteReservationTasklet(), transactionManager)
+                .build();
+    }
+
+    public Tasklet deleteReservationTasklet(){
+        return ((contribution, chunkContext) -> {
+            System.out.println("***** Batch *****");
+            reservationClient.deleteExpiredReservation();
+            return RepeatStatus.FINISHED;
+        });
+    }
+
 }

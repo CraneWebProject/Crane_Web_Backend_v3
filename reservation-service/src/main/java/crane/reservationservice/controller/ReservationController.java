@@ -102,4 +102,11 @@ public class ReservationController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
+    //지난 주의 예약자 없는 예약 삭제 (batch-service 의 삭제 잡이 호출)
+    @DeleteMapping("expired")
+    public ResponseEntity<ApiResponse<Void>> deleteExpiredReservation(){
+        reservationService.deleteReservation();
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
 }
