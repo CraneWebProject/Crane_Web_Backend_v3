@@ -127,22 +127,10 @@ pipeline {
                     echo "🔍 현재 REDIS_PORT 값: $REDIS_PORT"
 
                     docker build -t $IMAGE_TAG \
-                        --build-arg TZ=$TZ \
-                        --build-arg JWT_KEY=$JWT_KEY \
-                        --build-arg REDIS_HOST=$REDIS_HOST \
-                        --build-arg REDIS_PORT=$REDIS_PORT \
-                        --build-arg MYSQL_URL=$MYSQL_URL \
-                        --build-arg MYSQL_USER=$MYSQL_USER \
-                        --build-arg MYSQL_PASSWORD=$MYSQL_PASSWORD \
-                        --build-arg EUREKA_URL=$EUREKA_URL \
                         user-service/
 
-                    # 기존 컨테이너 종료 후 삭제
-                    docker stop $SERVICE_NAME || true
-                    docker rm $SERVICE_NAME || true
-
-                    # 새 컨테이너 실행
-                    docker run -d --name $SERVICE_NAME \
+                    # 블루그린 배포: 새 컨테이너 기동 → Eureka 헬스체크 → 구 인스턴스 트래픽 제외 → 구 컨테이너 정리
+                    sh deploy/bluegreen.sh $SERVICE_NAME 8081 $LOCAL_PORT $IMAGE_TAG \
                         -e TZ=$TZ \
                         -e JWT_KEY=$JWT_KEY \
                         -e REDIS_HOST=$REDIS_HOST \
@@ -150,8 +138,7 @@ pipeline {
                         -e MYSQL_URL=$MYSQL_URL \
                         -e MYSQL_USER=$MYSQL_USER \
                         -e MYSQL_PASSWORD=$MYSQL_PASSWORD \
-                        -e EUREKA_URL=$EUREKA_URL \
-                        -p $LOCAL_PORT:8081 $IMAGE_TAG
+                        -e EUREKA_URL=$EUREKA_URL
                     '''
 
                     long endTime = new Date().getTime()

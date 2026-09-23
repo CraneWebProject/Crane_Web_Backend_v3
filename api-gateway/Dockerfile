@@ -1,21 +1,7 @@
 FROM openjdk:17-jdk-slim
 WORKDIR /app
 
-# 환경변수 정의 - api-gateway에 필요한 것만
-ARG REDIS_HOST
-ARG REDIS_PORT
-ARG JWT_KEY
-ARG EUREKA_URL
-ARG SSL_PATH
-ARG SSL_PASSWORD
-
-# 환경변수 설정
-ENV REDIS_HOST=${REDIS_HOST}
-ENV REDIS_PORT=${REDIS_PORT}
-ENV JWT_KEY=${JWT_KEY}
-ENV EUREKA_URL=${EUREKA_URL}
-ENV SSL_PATH=${SSL_PATH}
-ENV SSL_PASSWORD=${SSL_PASSWORD}
+# 환경변수(비밀값 포함)는 이미지에 넣지 않고 실행 시점에 주입한다 (Jenkins → docker run -e)
 
 COPY build/libs/api-gateway-0.0.1-SNAPSHOT.jar app.jar
 

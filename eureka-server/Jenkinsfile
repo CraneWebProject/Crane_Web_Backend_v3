@@ -117,16 +117,18 @@ pipeline {
                     echo "🔍 현재 EUREKA_URL 값: $EUREKA_URL"
 
                     docker build -t $IMAGE_TAG \
-                        --build-arg TZ=$TZ \
-                        --build-arg EUREKA_URL=$EUREKA_URL \
                         eureka-server/
 
+                    # 블루그린 미적용(재생성 방식): 클라이언트가 고정 URL을 바라봄. 재시작 중에도 각 서비스는 캐시된 레지스트리로 라우팅
                     # 기존 컨테이너 종료 후 삭제
                     docker stop $SERVICE_NAME || true
                     docker rm $SERVICE_NAME || true
 
                     # 새 컨테이너 실행
                     docker run -d --name $SERVICE_NAME \
+                        --restart unless-stopped \
+                        --memory 512m --cpus 1.0 \
+                        -e JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=60.0 \
                         -e TZ=$TZ \
                         -e EUREKA_URL=$EUREKA_URL \
                         -p $LOCAL_PORT:8761 $IMAGE_TAG

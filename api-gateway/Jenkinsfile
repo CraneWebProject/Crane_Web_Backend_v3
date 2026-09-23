@@ -126,21 +126,18 @@ pipeline {
                     echo "🔍 현재 REDIS_PORT 값: $REDIS_PORT"
 
                     docker build -t $IMAGE_TAG \
-                        --build-arg TZ=$TZ \
-                        --build-arg JWT_KEY=$JWT_KEY \
-                        --build-arg REDIS_HOST=$REDIS_HOST \
-                        --build-arg REDIS_PORT=$REDIS_PORT \
-                        --build-arg EUREKA_URL=$EUREKA_URL \
-                        --build-arg SSL_PATH=$SSL_PATH \
-                        --build-arg SSL_PASSWORD=$SSL_PASSWORD \
                         api-gateway/
 
+                    # 블루그린 미적용(재생성 방식): 외부 진입점(호스트 8080)이라 Eureka 전환 대상이 아님
                     # 기존 컨테이너 종료 후 삭제
                     docker stop $SERVICE_NAME || true
                     docker rm $SERVICE_NAME || true
 
                     # 새 컨테이너 실행
                     docker run -d --name $SERVICE_NAME \
+                        --restart unless-stopped \
+                        --memory 512m --cpus 1.0 \
+                        -e JAVA_TOOL_OPTIONS=-XX:MaxRAMPercentage=60.0 \
                         -v /volume1/docker/cert:/var/lib/cert \
                         -p $LOCAL_PORT:8080 \
                         -e TZ=$TZ \
